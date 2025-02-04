@@ -12,6 +12,7 @@ export const Colors = {
   background: '#EEEEDD',
   text: '#000000',
   neutral: '#ffffff',
+  borderLight: '#C5C5C5',
   light: {
     text: '#11181C',
     background: '#fff',
