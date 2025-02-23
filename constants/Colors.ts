@@ -13,6 +13,8 @@ export const Colors = {
   text: '#000000',
   neutral: '#ffffff',
   borderLight: '#C5C5C5',
+  fadedPrimary: "#4c648c",
+  fadedText: '#7a7979',
   light: {
     text: '#11181C',
     background: '#fff',
