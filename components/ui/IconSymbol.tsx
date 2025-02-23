@@ -1,43 +1,43 @@
-// This file is a fallback for using MaterialIcons on Android and web.
-
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight } from 'expo-symbols';
-import React from 'react';
-import { OpaqueColorValue, StyleProp, ViewStyle } from 'react-native';
-
-// Add your SFSymbol to MaterialIcons mappings here.
-const MAPPING = {
-  // See MaterialIcons here: https://icons.expo.fyi
-  // See SF Symbols in the SF Symbols app on Mac.
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as Partial<
-  Record<
-    import('expo-symbols').SymbolViewProps['name'],
-    React.ComponentProps<typeof MaterialIcons>['name']
-  >
->;
+import React from "react";
+import { StyleProp, View, ViewStyle } from "react-native";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 export type IconSymbolName = keyof typeof MAPPING;
 
-/**
- * An icon component that uses native SFSymbols on iOS, and MaterialIcons on Android and web. This ensures a consistent look across platforms, and optimal resource usage.
- *
- * Icon `name`s are based on SFSymbols and require manual mapping to MaterialIcons.
- */
+// Mapping SF Symbols to MaterialCommunityIcons
+const MAPPING = {
+  house: "home-outline",
+  "house.fill": "home",
+  creditcard: "piggy-bank-outline",
+  "creditcard.fill": "piggy-bank",
+  target: "bullseye-arrow",
+  "target.fill": "bullseye-arrow",
+  "list.bullet": "clipboard-list-outline",
+  "list.bullet.circle.fill": "clipboard-list",
+  "ellipsis.circle": "dots-horizontal",
+  "ellipsis.circle.fill": "dots-horizontal-circle",
+  "chevron.left.forwardslash.chevron.right": "code-braces",
+  "chevron.right": "arrow-right-thin",
+} as const;
+
 export function IconSymbol({
   name,
-  size = 24,
+  size = 40,
   color,
+  focused = false,
   style,
 }: {
   name: IconSymbolName;
   size?: number;
-  color: string | OpaqueColorValue;
+  color: string;
+  focused?: boolean;
   style?: StyleProp<ViewStyle>;
-  weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  const iconName = MAPPING[name] || "help-circle-outline"; // Fallback icon
+
+  return (
+    <View style={[style, { transform: [{ scale: 0.75 }] }]}>
+      <MaterialCommunityIcons name={iconName} size={size} color={color} />
+    </View>
+  );
 }
