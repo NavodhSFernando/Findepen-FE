@@ -15,6 +15,8 @@ export const Colors = {
   borderLight: '#C5C5C5',
   fadedPrimary: "#4c648c",
   fadedText: '#7a7979',
+  error: '#E74C3C',
+  success: '#4CD964',
   light: {
     text: '#11181C',
     background: '#fff',
