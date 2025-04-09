@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import BudgetProgressCard from "@/components/ui/BudgetProgressCard";
 import { Colors } from "@/constants/Colors";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
@@ -7,38 +7,60 @@ import Title from "@/components/ui/Title";
 import { useRouter } from "expo-router";
 import CircleButton from "@/components/ui/CircleButton";
 
-const index = () => {
-  const [budgetData, setBudgetData] = React.useState([
-    {
-      category: "Groceries",
-      startDate: "01-01-2021",
-      endDate: "31-01-2021",
-      totalAmount: 10000,
-      spentAmount: 5000,
-    },
-    {
-      category: "Entertainment",
-      startDate: "01-01-2021",
-      endDate: "31-01-2021",
-      totalAmount: 5000,
-      spentAmount: 1000,
-    },
-    {
-      category: "Health",
-      startDate: "01-01-2021",
-      endDate: "31-01-2021",
-      totalAmount: 3000,
-      spentAmount: 2000,
-    },
-    {
-      category: "Transport",
-      startDate: "01-01-2021",
-      endDate: "31-01-2021",
-      totalAmount: 5000,
-      spentAmount: 3000,
-    },
-  ]);
+type Budget = {
+  category: string;
+  startDate: Date;
+  endDate: Date;
+  totalAmount: number;
+  spentAmount: number;
+};
+
+const MOCK_BUDGET_DATA: Budget[] = [
+  {
+    category: "Groceries",
+    startDate: new Date("2021-01-01"),
+    endDate: new Date("2021-01-31"),
+    totalAmount: 10000,
+    spentAmount: 5000,
+  },
+  {
+    category: "Entertainment",
+    startDate: new Date("2021-01-01"),
+    endDate: new Date("2021-01-31"),
+    totalAmount: 5000,
+    spentAmount: 1000,
+  },
+  {
+    category: "Health",
+    startDate: new Date("2021-01-01"),
+    endDate: new Date("2021-01-31"),
+    totalAmount: 3000,
+    spentAmount: 2000,
+  },
+  {
+    category: "Transport",
+    startDate: new Date("2021-01-01"),
+    endDate: new Date("2021-01-31"),
+    totalAmount: 5000,
+    spentAmount: 3000,
+  },
+];
+
+const Index = () => {
+  const [budgetData, setBudgetData] = useState<Budget[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    // Simulate API fetch
+    const fetchBudgetData = async () => {
+      // simulate delay
+      await new Promise((res) => setTimeout(res, 500));
+      setBudgetData(MOCK_BUDGET_DATA);
+    };
+
+    fetchBudgetData();
+  }, []);
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{
@@ -48,11 +70,13 @@ const index = () => {
       headerImage={
         <View style={styles.topContainer}>
           <Title text="Budget" />
-          <CircleButton
-            icon="add"
-            onPress={() => router.push("/budget/add")}
-            size={40}
-          />
+          <View style={styles.buttonContainer}>
+            <CircleButton
+              icon="add"
+              onPress={() => router.push("/budget/add")}
+              size={40}
+            />
+          </View>
         </View>
       }
     >
@@ -60,33 +84,22 @@ const index = () => {
         {budgetData.length > 0 && (
           <Text style={styles.budgetText}>Your Regular Budgets</Text>
         )}
-        {budgetData.map(
-          (
-            budget: {
-              category: string;
-              startDate: string;
-              endDate: string;
-              totalAmount: number;
-              spentAmount: number;
-            },
-            index: number
-          ) => (
-            <BudgetProgressCard
-              key={index}
-              category={budget.category}
-              startDate={budget.startDate}
-              endDate={budget.endDate}
-              totalAmount={budget.totalAmount}
-              spentAmount={budget.spentAmount}
-            />
-          )
-        )}
+        {budgetData.map((budget, index) => (
+          <BudgetProgressCard
+            key={index}
+            category={budget.category}
+            startDate={budget.startDate}
+            endDate={budget.endDate}
+            totalAmount={budget.totalAmount}
+            spentAmount={budget.spentAmount}
+          />
+        ))}
       </View>
     </ParallaxScrollView>
   );
 };
 
-export default index;
+export default Index;
 
 const styles = StyleSheet.create({
   topContainer: {
@@ -113,5 +126,10 @@ const styles = StyleSheet.create({
     color: Colors.borderLight,
     textTransform: "uppercase",
     paddingBottom: 10,
+  },
+  buttonContainer: {
+    position: "absolute",
+    top: 65,
+    right: 40,
   },
 });
