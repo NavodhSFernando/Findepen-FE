@@ -168,8 +168,7 @@ const styles = StyleSheet.create({
   iconButton: {
     position: "absolute",
     right: 10,
-    top: "50%",
-    transform: [{ translateY: -10 }],
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
     opacity: 0.5,
@@ -178,18 +177,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#555",
     fontFamily: "JakarthaRegular",
-    textAlignVertical: "center",
     paddingLeft: 10,
+    // Ensure text is vertically centered
+    paddingVertical: 12,
   },
   dateButton: {
     flex: 1,
+    height: 40,
     justifyContent: "center",
   },
   dateIcon: {
     position: "absolute",
     right: 10,
-    top: "25%",
-    transform: [{ translateY: -10 }],
+    // Center the icon vertically
+    alignSelf: "center",
     opacity: 0.5,
   },
 });
