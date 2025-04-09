@@ -65,7 +65,7 @@ export default function ParallaxScrollView({
         ref={scrollRef}
         scrollEventThrottle={16}
         scrollIndicatorInsets={{ bottom }}
-        contentContainerStyle={{ paddingBottom: bottom }}
+        contentContainerStyle={{ paddingBottom: bottom, flexGrow: 1 }}
       >
         {/* Step 1: Measure header image height first */}
         {headerHeight === null ? (

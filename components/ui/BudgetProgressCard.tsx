@@ -6,8 +6,8 @@ import { Colors } from "@/constants/Colors";
 
 interface BudgetProgressCardProps {
   category: string;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
   totalAmount: number;
   spentAmount: number;
 }
@@ -36,6 +36,16 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
   const progress = spentAmount / totalAmount; // Progress percentage
   const note = getNoteByProgress(progress);
 
+  const start = startDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+
+  const end = endDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+  });
+
   return (
     <View style={styles.card}>
       {/* Top Section */}
@@ -43,7 +53,7 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
         <View>
           <Text style={styles.category}>{category}</Text>
           <Text style={styles.date}>
-            {startDate} - {endDate}
+            {start} - {end}
           </Text>
         </View>
         <View>
@@ -147,6 +157,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.neutral,
     fontFamily: "JakarthaBold",
+    textShadowColor: Colors.text,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 1,
   },
   progressPercentage: {
     fontSize: 12,
@@ -166,6 +179,6 @@ const styles = StyleSheet.create({
   },
   icons: {
     flexDirection: "row",
-    gap: 10,
+    gap: 15,
   },
 });

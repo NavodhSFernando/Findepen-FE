@@ -1,41 +1,61 @@
-import { View, TextInput, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
-import React, { useState } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
+  TextInputProps,
+  TouchableOpacity,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 interface InputProps extends TextInputProps {
   label: string;
   placeholder?: string;
-  type?: 'text' | 'number' | 'date' | 'password';
-  format?: string; 
-  iconName?: string; 
+  type?: "text" | "number" | "date" | "password" | "email";
+  format?: string;
+  iconName?: string;
 }
 
 const InputField: React.FC<InputProps> = ({
-  label = 'Label',
-  placeholder = 'Type here',
-  type = 'text',
-  format = 'YYYY-MM-DD',
-  iconName = '',
+  label = "Label",
+  placeholder = "Type here",
+  type = "text",
+  format = "YYYY-MM-DD",
+  iconName = "",
   ...props
 }) => {
-  const [inputText, setInputText] = useState<string | number | Date>('');
+  const [inputText, setInputText] = useState<string | number | Date>("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handleTextChange = (text: string) => {
-    if (type === 'number') {
-      const parsedValue = isNaN(Number(text)) ? '' : Number(text);
+    if (type === "number") {
+      const parsedValue = isNaN(Number(text)) ? "" : Number(text);
       setInputText(parsedValue);
     } else {
       setInputText(text);
     }
   };
 
+  useEffect(() => {
+    if (props.value) {
+      const parsedDate = new Date(props.value);
+      if (parsedDate instanceof Date && !isNaN(parsedDate.getTime())) {
+        setInputText(parsedDate);
+      }
+    }
+  }, [props.value]);
+
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
-    if (selectedDate) {
+    if (selectedDate instanceof Date && !isNaN(selectedDate.getTime())) {
       setInputText(selectedDate);
+      if (props.onChangeText) {
+        // Pass the date as a formatted string to the parent
+        props.onChangeText(selectedDate.toISOString().split("T")[0]);
+      }
     }
   };
 
@@ -51,12 +71,23 @@ const InputField: React.FC<InputProps> = ({
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputContainer}>
-        {type === 'date' ? (
+        {type === "date" ? (
           <>
-            <TouchableOpacity onPress={openDatePicker} style={styles.dateButton}>
+            <TouchableOpacity
+              onPress={openDatePicker}
+              style={styles.dateButton}
+            >
               <Text style={styles.dateText}>
-                {inputText instanceof Date ? inputText.toDateString() : placeholder}
+                {inputText instanceof Date
+                  ? inputText.toDateString()
+                  : placeholder}
               </Text>
+              <Icon
+                name="calendar"
+                size={20}
+                color="#555"
+                style={styles.dateIcon}
+              />
             </TouchableOpacity>
             {showDatePicker && (
               <DateTimePicker
@@ -71,19 +102,32 @@ const InputField: React.FC<InputProps> = ({
           <>
             <TextInput
               style={styles.input}
-              value={inputText ? String(inputText) : ''}
+              value={inputText ? String(inputText) : ""}
               onChangeText={handleTextChange}
               placeholder={placeholder}
-              keyboardType={type === 'number' ? 'numeric' : 'default'}
-              secureTextEntry={type === 'password' && !isPasswordVisible}
+              keyboardType={
+                type === "number"
+                  ? "numeric"
+                  : type === "email"
+                    ? "email-address"
+                    : "default"
+              }
+              secureTextEntry={type === "password" && !isPasswordVisible}
               {...props}
             />
-            {type === 'password' && (
-              <TouchableOpacity onPress={togglePasswordVisibility} style={styles.iconButton}>
-                <Icon name={isPasswordVisible ? 'eye' : 'eye-slash'} size={20} color="#555" />
+            {type === "password" && (
+              <TouchableOpacity
+                onPress={togglePasswordVisibility}
+                style={styles.iconButton}
+              >
+                <Icon
+                  name={isPasswordVisible ? "eye" : "eye-slash"}
+                  size={20}
+                  color="#555"
+                />
               </TouchableOpacity>
             )}
-            {type !== 'password' && iconName && (
+            {type !== "password" && iconName && (
               <TouchableOpacity style={styles.iconButton}>
                 <Icon name={iconName} size={20} color="#555" />
               </TouchableOpacity>
@@ -97,21 +141,20 @@ const InputField: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    marginBottom: 10,
+    width: "100%",
   },
   label: {
     fontSize: 12,
     marginBottom: 5,
-    fontFamily: 'JakarthaRegular',
+    fontFamily: "JakarthaRegular",
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
     height: 40,
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
+    backgroundColor: "#fff",
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 5,
   },
@@ -119,28 +162,35 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 10,
     paddingRight: 35,
-    fontFamily: 'JakarthaRegular',
+    fontFamily: "JakarthaRegular",
     fontSize: 12,
   },
   iconButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 10,
-    top: '50%',
+    top: "50%",
     transform: [{ translateY: -10 }],
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     opacity: 0.5,
   },
   dateText: {
     fontSize: 12,
-    color: '#555',
-    fontFamily: 'JakarthaRegular',
-    textAlignVertical: 'center',
+    color: "#555",
+    fontFamily: "JakarthaRegular",
+    textAlignVertical: "center",
     paddingLeft: 10,
   },
   dateButton: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
+  },
+  dateIcon: {
+    position: "absolute",
+    right: 10,
+    top: "25%",
+    transform: [{ translateY: -10 }],
+    opacity: 0.5,
   },
 });
 

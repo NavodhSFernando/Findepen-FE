@@ -41,7 +41,14 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   progressBar: {
-    boxShadow: "0px 4px 4px rgba(142, 192, 236, 1)",
+    shadowColor: "#8EC0EC",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   progressText: {
     position: "absolute",

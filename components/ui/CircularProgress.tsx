@@ -72,7 +72,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
           <Icon name={getIconName(category)} size={28} color={Colors.text} />
         </View>
       </View>
-      <Text style={styles.description}>title</Text>
+      <Text style={styles.description}>{title}</Text>
     </View>
   );
 };

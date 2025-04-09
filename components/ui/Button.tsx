@@ -1,21 +1,26 @@
-import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import React from "react";
+import { Pressable, Text, StyleSheet } from "react-native";
+import { Colors } from "@/constants/Colors";
 
 interface ButtonProps {
   title: string;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: "primary" | "secondary" | "danger";
   onPress: () => void;
+  disabled?: boolean;
 }
 
-const Button: React.FC<ButtonProps> = ({ title, variant = 'primary', onPress }) => {
+const Button: React.FC<ButtonProps> = ({
+  title,
+  variant = "primary",
+  onPress,
+}) => {
   return (
-    <Pressable 
+    <Pressable
       style={({ pressed }) => [
-        styles.button, 
-        styles[variant], 
-        pressed && styles.pressed
-      ]} 
+        styles.button,
+        styles[variant],
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
     >
       <Text style={[styles.buttonText, styles[`${variant}Text`]]}>{title}</Text>
@@ -25,16 +30,16 @@ const Button: React.FC<ButtonProps> = ({ title, variant = 'primary', onPress }) 
 
 const styles = StyleSheet.create({
   button: {
-    width: '50%',
+    width: "50%",
     paddingVertical: 12,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 40,
   },
   buttonText: {
     fontSize: 16,
-    fontFamily: 'JakarthaSemiBold',
+    fontFamily: "JakarthaSemiBold",
   },
   primary: {
     backgroundColor: Colors.primary,
@@ -51,7 +56,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   danger: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: "#FF3B30",
   },
   dangerText: {
     color: Colors.neutral,
