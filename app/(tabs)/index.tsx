@@ -9,18 +9,28 @@ import Transaction from "@/components/ui/Transaction";
 import { useRouter } from "expo-router";
 import CircularProgress from "@/components/ui/CircularProgress";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
+import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
+import { useState } from "react";
 
 function getGreeting(): string {
   const currentHour = new Date().getHours();
   return currentHour < 12
     ? "Good Morning"
     : currentHour < 18
-    ? "Good Afternoon"
-    : "Good Evening";
+      ? "Good Afternoon"
+      : "Good Evening";
 }
 
 export default function Overview() {
   const router = useRouter();
+  const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
+
+  const handleInputMethodSelect = (method: "manual" | "scan" | "file") => {
+    // Handle the selected input method
+    console.log("Selected method:", method);
+    // Add logic to navigate or handle the selected method
+  };
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{
@@ -35,7 +45,11 @@ export default function Overview() {
               <Text style={styles.greetingText}>{getGreeting()}</Text>
             </View>
             <View style={styles.buttonContainer}>
-              <CircleButton icon="add" onPress={() => {}} size={40} />
+              <CircleButton
+                icon="add"
+                onPress={() => setIsInputMethodVisible(true)}
+                size={40}
+              />
             </View>
           </View>
           <View style={styles.summaryContainer}>
@@ -54,7 +68,7 @@ export default function Overview() {
             <Text style={styles.headerText}>Recent Transactions</Text>
             <Text
               style={styles.transactionLink}
-              onPress={() => router.push("/transactions")}
+              onPress={() => router.push("/login")}
             >
               See more
             </Text>
@@ -101,6 +115,12 @@ export default function Overview() {
           </View>
         </View>
       </View>
+
+      <TransactionInputMethodSelector
+        visible={isInputMethodVisible}
+        onClose={() => setIsInputMethodVisible(false)}
+        onSelect={handleInputMethodSelect}
+      />
     </ParallaxScrollView>
   );
 }
