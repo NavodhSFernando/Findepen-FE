@@ -23,10 +23,10 @@ export default function TabLayout() {
         tabBarStyle: {
           height:
             Platform.OS === "ios" ? 80 + insets.bottom : 40 + insets.bottom, // Dynamic height to avoid overlap
-          backgroundColor: Colors.neutral, // Ensures visibility
-          borderTopLeftRadius: 20, // Rounded top edges (optional)
+          backgroundColor: Colors.neutral,
+          borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
-          elevation: 5, // Shadow for Android
+          elevation: 5,
           display: "flex",
           justifyContent: "center",
           paddingVertical: "auto",
