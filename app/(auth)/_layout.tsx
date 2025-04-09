@@ -11,6 +11,18 @@ export default function AuthLayout() {
         name="login"
         options={{ title: "Login", headerShown: false }}
       />
+      <Stack.Screen
+        name="forgot-password"
+        options={{ title: "Forgot Password", headerShown: false }}
+      />
+      <Stack.Screen
+        name="reset-password"
+        options={{ title: "Reset Password", headerShown: false }}
+      />
+      <Stack.Screen
+        name="verify-otp"
+        options={{ title: "Verify Otp", headerShown: false }}
+      />
     </Stack>
   );
 }
