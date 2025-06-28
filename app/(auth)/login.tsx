@@ -40,15 +40,20 @@ const LoginPage: React.FC = () => {
       console.log("Logged in successfully:", response.data);
       router.push("/");
 
-      // Store token securely
+      // Store token securely - Backend returns "token" (lowercase) due to JSON serialization
       const token = response.data.token;
       if (token) {
         await SecureStore.setItemAsync("authToken", token);
         console.log("Token stored successfully");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login error:", err);
-      setLoginError("Incorrect email or password");
+      // Better error handling - show specific backend error message
+      if (err.response?.data?.message) {
+        setLoginError(err.response.data.message);
+      } else {
+        setLoginError("Incorrect email or password");
+      }
     }
   };
 

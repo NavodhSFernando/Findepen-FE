@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
@@ -18,6 +18,9 @@ interface verifyOtpForm {
 const VerifyOtpPage: React.FC = () => {
   const router = useRouter();
   const { email } = useLocalSearchParams();
+  const [verifyOtpError, setVerifyOtpError] = useState<string | null>(null);
+  const [resendOtpError, setResendOtpError] = useState<string | null>(null);
+  const [resendOtpSuccess, setResendOtpSuccess] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -30,10 +33,11 @@ const VerifyOtpPage: React.FC = () => {
 
   const handleVerifyPassword = async (data: verifyOtpForm) => {
     try {
+      setVerifyOtpError(null);
       const url = "http://192.168.1.6:5141/api/auth/verify-otp";
       const request = {
-        otp: data.otp,
-        email: email,
+        Otp: data.otp,
+        Email: email,
       };
       const response = await axios.post(url, request);
 
@@ -42,18 +46,32 @@ const VerifyOtpPage: React.FC = () => {
         pathname: "/reset-password",
         params: { email: email, otp: data.otp },
       });
-    } catch (err) {
-      console.error("Login error:", err);
+    } catch (err: any) {
+      console.error("Verify OTP error:", err);
+      if (err.response?.data?.message) {
+        setVerifyOtpError(err.response.data.message);
+      } else {
+        setVerifyOtpError("Invalid OTP. Please try again.");
+      }
     }
   };
 
   const resendOtp = async () => {
     try {
+      setResendOtpError(null);
+      setResendOtpSuccess(null);
       const url = "http://192.168.1.6:5141/api/auth/forgot-password";
-      const response = await axios.post(url, email);
+      const request = { Email: email };
+      const response = await axios.post(url, request);
       console.log("OTP sent successfully:", response.data);
-    } catch (err) {
+      setResendOtpSuccess("OTP sent successfully. Please check your email.");
+    } catch (err: any) {
       console.error("Resend OTP error:", err);
+      if (err.response?.data?.message) {
+        setResendOtpError(err.response.data.message);
+      } else {
+        setResendOtpError("Failed to resend OTP. Please try again.");
+      }
     }
   };
 
@@ -70,6 +88,21 @@ const VerifyOtpPage: React.FC = () => {
       }
     >
       <View style={styles.bodyContainer}>
+        {verifyOtpError && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorBoxText}>{verifyOtpError}</Text>
+          </View>
+        )}
+        {resendOtpError && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorBoxText}>{resendOtpError}</Text>
+          </View>
+        )}
+        {resendOtpSuccess && (
+          <View style={styles.successBox}>
+            <Text style={styles.successBoxText}>{resendOtpSuccess}</Text>
+          </View>
+        )}
         <Text style={styles.text}>
           Please enter the security pin sent to your email address
         </Text>
@@ -147,6 +180,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginVertical: 10,
     marginHorizontal: "auto",
+    fontFamily: "JakarthaRegular",
+  },
+  errorBox: {
+    backgroundColor: Colors.error,
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  errorBoxText: {
+    color: "white",
+    fontSize: 12,
+    fontFamily: "JakarthaRegular",
+  },
+  successBox: {
+    backgroundColor: Colors.success,
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  successBoxText: {
+    color: "white",
+    fontSize: 12,
     fontFamily: "JakarthaRegular",
   },
 });

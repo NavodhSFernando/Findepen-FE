@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
@@ -20,6 +20,7 @@ interface RegisterForm {
 
 const RegisterPage: React.FC = () => {
   const router = useRouter();
+  const [registerError, setRegisterError] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -38,6 +39,7 @@ const RegisterPage: React.FC = () => {
 
   const handleRegister = async (data: RegisterForm) => {
     try {
+      setRegisterError(null);
       const url = "http://192.168.1.6:5141/api/auth/register";
       const request = {
         Name: data.name,
@@ -50,8 +52,16 @@ const RegisterPage: React.FC = () => {
 
       console.log("Registered successfully:", response.data);
       router.push("/login");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Registration error:", err);
+      // Better error handling - show specific backend error message
+      if (err.response?.data?.message) {
+        setRegisterError(err.response.data.message);
+      } else if (err.response?.data?.errors) {
+        setRegisterError(err.response.data.errors.join(", "));
+      } else {
+        setRegisterError("Registration failed. Please try again.");
+      }
     }
   };
   return (
@@ -67,6 +77,11 @@ const RegisterPage: React.FC = () => {
       }
     >
       <View style={styles.bodyContainer}>
+        {registerError && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorBoxText}>{registerError}</Text>
+          </View>
+        )}
         <Controller
           control={control}
           name="name"
@@ -294,6 +309,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 10,
+  },
+  errorBox: {
+    backgroundColor: Colors.error,
+    padding: 15,
+    borderRadius: 8,
+    width: "100%",
+    marginBottom: 10,
+  },
+  errorBoxText: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
   },
 });
 

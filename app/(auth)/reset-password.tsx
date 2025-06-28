@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
@@ -17,6 +17,9 @@ interface ResetPasswordForm {
 const ResetPasswordPage: React.FC = () => {
   const router = useRouter();
   const { email, otp } = useLocalSearchParams();
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(
+    null
+  );
   const {
     control,
     handleSubmit,
@@ -31,6 +34,7 @@ const ResetPasswordPage: React.FC = () => {
 
   const handleResetPassword = async (data: ResetPasswordForm) => {
     try {
+      setResetPasswordError(null);
       const url = "http://192.168.1.6:5141/api/auth/reset-password";
       const request = {
         Otp: otp,
@@ -41,8 +45,15 @@ const ResetPasswordPage: React.FC = () => {
 
       console.log("Password reset successfully:", response.data);
       router.push("/login");
-    } catch (err) {
-      console.error("Registration error:", err);
+    } catch (err: any) {
+      console.error("Reset password error:", err);
+      if (err.response?.data?.message) {
+        setResetPasswordError(err.response.data.message);
+      } else if (err.response?.data?.errors) {
+        setResetPasswordError(err.response.data.errors.join(", "));
+      } else {
+        setResetPasswordError("Password reset failed. Please try again.");
+      }
     }
   };
   return (
@@ -58,6 +69,11 @@ const ResetPasswordPage: React.FC = () => {
       }
     >
       <View style={styles.bodyContainer}>
+        {resetPasswordError && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorBoxText}>{resetPasswordError}</Text>
+          </View>
+        )}
         <Controller
           control={control}
           name="password"
@@ -155,6 +171,17 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     marginTop: 20,
+  },
+  errorBox: {
+    backgroundColor: Colors.error,
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 20,
+  },
+  errorBoxText: {
+    color: "white",
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
   },
 });
 
