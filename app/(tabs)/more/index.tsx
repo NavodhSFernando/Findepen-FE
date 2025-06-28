@@ -1,15 +1,20 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import MenuItem from "@/components/ui/MenuItem";
 import * as SecureStore from "expo-secure-store";
+import * as ImagePicker from "expo-image-picker";
+import UploadModal from "@/components/ui/UploadModal";
 
 const More = () => {
   const router = useRouter();
-  const profileImage = require("@/assets/images/default-avatar.png");
+  const defaultImage = require("@/assets/images/default-avatar.png");
+  const [image, setImage] = useState<{ uri: string } | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
     await SecureStore.deleteItemAsync("authToken");
@@ -17,43 +22,125 @@ const More = () => {
     console.log("Logged out");
   };
 
+  const uploadDp = async (mode?: string) => {
+    try {
+      setIsLoading(true);
+      let result: ImagePicker.ImagePickerResult;
+
+      if (mode === "gallery") {
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 1,
+        });
+      } else {
+        await ImagePicker.requestCameraPermissionsAsync();
+        result = await ImagePicker.launchCameraAsync({
+          cameraType: ImagePicker.CameraType.front,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 1,
+        });
+      }
+
+      if (!result.canceled) {
+        await saveImage({ uri: result.assets[0].uri });
+      } else {
+        setIsLoading(false);
+        setModalVisible(false);
+      }
+    } catch (error) {
+      console.log(error);
+      setIsLoading(false);
+      setModalVisible(false);
+    }
+  };
+
+  const removeImage = async () => {
+    try {
+      setIsLoading(true);
+      await saveImage(null);
+    } catch (message) {
+      alert(message);
+      setIsLoading(false);
+      setModalVisible(false);
+    }
+  };
+
+  const saveImage = async (image: { uri: string } | null) => {
+    try {
+      // Simulate API upload delay
+      setTimeout(() => {
+        setImage(image);
+        setIsLoading(false);
+        setModalVisible(false);
+      }, 500);
+    } catch (error) {
+      console.log(error);
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
-      <ParallaxScrollView
-        headerBackgroundColor={{
-          light: Colors.secondary,
-          dark: Colors.secondary,
-        }}
-        headerImage={<View style={styles.headerContainer}></View>}
-      >
-        <View style={styles.bodyContainer}>
-          <Text style={styles.name}>John Smith</Text>
-          <Text style={styles.email}>jsmith@gmail.com</Text>
-          <View style={styles.divider} />
-          <MenuItem
-            icon="user"
-            title="Edit Profile"
-            onPress={() => router.push("/more/profile")}
+      <View style={{ flex: 1 }}>
+        <ParallaxScrollView
+          headerBackgroundColor={{
+            light: Colors.secondary,
+            dark: Colors.secondary,
+          }}
+          headerImage={<View style={styles.headerContainer}></View>}
+        >
+          <View style={styles.bodyContainer}>
+            <Text style={styles.name}>John Smith</Text>
+            <Text style={styles.email}>jsmith@gmail.com</Text>
+            <View style={styles.divider} />
+            <MenuItem
+              icon="user"
+              title="Edit Profile"
+              onPress={() => router.push("/more/profile")}
+            />
+            <MenuItem
+              icon="repeat"
+              title="Recurring Transactions"
+              onPress={() => router.push("/more/recurring")}
+            />
+            <MenuItem
+              icon="settings"
+              title="Settings"
+              onPress={() => router.push("/more/settings")}
+            />
+            <MenuItem icon="log-out" title="Logout" onPress={handleLogout} />
+          </View>
+        </ParallaxScrollView>
+
+        <View style={styles.profileImageContainer}>
+          <Image
+            source={image ? image : defaultImage}
+            style={styles.profileImage}
           />
-          <MenuItem
-            icon="repeat"
-            title="Recurring Transactions"
-            onPress={() => router.push("/more/recurring")}
-          />
-          <MenuItem
-            icon="settings"
-            title="Settings"
-            onPress={() => router.push("/more/settings")}
-          />
-          <MenuItem icon="log-out" title="Logout" onPress={handleLogout} />
+          <TouchableOpacity
+            style={styles.cameraButton}
+            onPress={() => setModalVisible(true)}
+          >
+            <Ionicons name="camera" size={20} color={Colors.text} />
+          </TouchableOpacity>
         </View>
-      </ParallaxScrollView>
-      <View style={styles.profileImageContainer}>
-        <Image source={profileImage} style={styles.profileImage} />
-        <TouchableOpacity style={styles.cameraButton}>
-          <Ionicons name="camera" size={20} color={Colors.text} />
-        </TouchableOpacity>
       </View>
+
+      {/* Modal rendered separately outside the main component hierarchy */}
+      {modalVisible && (
+        <UploadModal
+          modalVisible={modalVisible}
+          onBackPress={() => setModalVisible(false)}
+          onCameraPress={() => uploadDp("camera")}
+          onGalleryPress={() => uploadDp("gallery")}
+          onRemovePress={() => removeImage()}
+          isLoading={isLoading}
+        />
+      )}
     </>
   );
 };

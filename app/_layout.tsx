@@ -26,7 +26,7 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const colorScheme = useColorScheme();
-  // const [isLoading, setIsLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const [loaded] = useFonts({
     JakarthaRegular,
     JakarthaSemiBold,
@@ -39,39 +39,22 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  // useEffect(() => {
-  //   const checkAuth = async () => {
-  //     try {
-  //       const token = await getToken();
-  //       const inAuthGroup = segments[0] === "(auth)";
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await getToken();
+      const inAuthGroup = segments[0] === "(auth)";
 
-  //       if (!token && !inAuthGroup) {
-  //         // Use setTimeout to ensure navigation happens after mount
-  //         setTimeout(() => {
-  //           router.replace("/login");
-  //         }, 0);
-  //       } else if (token && inAuthGroup) {
-  //         setTimeout(() => {
-  //           router.replace("/");
-  //         }, 0);
-  //       }
-  //     } catch (error) {
-  //       console.error("Auth check error:", error);
-  //       setTimeout(() => {
-  //         router.replace("/login");
-  //       }, 0);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
+      if (!token && !inAuthGroup) {
+        router.replace("/login");
+      } else if (token && inAuthGroup) {
+        router.replace("/");
+      }
 
-  //   checkAuth();
-  // }, [segments]);
+      setIsReady(true);
+    };
 
-  // Show loading state while checking auth
-  // if (isLoading) {
-  //   return null;
-  // }
+    checkAuth();
+  }, [segments]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

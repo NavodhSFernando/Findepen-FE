@@ -13,7 +13,7 @@ interface RegisterForm {
   name: string;
   email: string;
   mobile: string;
-  dob: Date;
+  dob: Date | string;
   password: string;
   confirmPassword: string;
 }
@@ -30,7 +30,7 @@ const RegisterPage: React.FC = () => {
       name: "",
       email: "",
       mobile: "",
-      dob: new Date(),
+      dob: new Date(), // Initialize with current date
       password: "",
       confirmPassword: "",
     },
@@ -135,8 +135,14 @@ const RegisterPage: React.FC = () => {
               label="Date of Birth"
               type="date"
               placeholder="Select date of birth"
-              value={value.toISOString().split("T")[0]}
-              onChangeText={onChange}
+              value={
+                value instanceof Date
+                  ? value.toISOString().split("T")[0]
+                  : String(value)
+              }
+              onChangeText={(dateString) => {
+                onChange(dateString);
+              }}
               iconName="calendar"
             />
           )}
