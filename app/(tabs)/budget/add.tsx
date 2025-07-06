@@ -20,6 +20,7 @@ interface BudgetForm {
   reminder: boolean;
   startDate: string;
   renewalFrequency: string;
+  autoRenewalEnabled: boolean;
 }
 
 const AddBudgetPage: React.FC = () => {
@@ -42,6 +43,7 @@ const AddBudgetPage: React.FC = () => {
       reminder: false,
       startDate: new Date().toISOString().split("T")[0], // Today's date as default
       renewalFrequency: "Monthly",
+      autoRenewalEnabled: false,
     },
   });
 
@@ -57,6 +59,7 @@ const AddBudgetPage: React.FC = () => {
         Reminder: data.reminder,
         StartDate: data.startDate,
         RenewalFrequency: data.renewalFrequency,
+        AutoRenewalEnabled: data.autoRenewalEnabled,
       };
 
       const result = await createBudget(apiBudgetData);
@@ -194,6 +197,17 @@ const AddBudgetPage: React.FC = () => {
             {errors.renewalFrequency.message}
           </Text>
         )}
+
+        <Controller
+          control={control}
+          name="autoRenewalEnabled"
+          render={({ field: { onChange, value } }) => (
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchLabel}>Auto Renewal</Text>
+              <Switch value={value} onValueChange={onChange} />
+            </View>
+          )}
+        />
 
         <Controller
           control={control}

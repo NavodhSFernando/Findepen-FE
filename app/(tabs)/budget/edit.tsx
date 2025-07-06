@@ -29,6 +29,7 @@ interface BudgetForm {
   reminder: boolean;
   startDate: string;
   renewalFrequency: string;
+  autoRenewalEnabled: boolean;
 }
 
 const EditBudgetPage: React.FC = () => {
@@ -56,6 +57,7 @@ const EditBudgetPage: React.FC = () => {
       reminder: false,
       startDate: "",
       renewalFrequency: "",
+      autoRenewalEnabled: false,
     },
   });
 
@@ -75,6 +77,7 @@ const EditBudgetPage: React.FC = () => {
               reminder: budgetData.Reminder ?? false,
               startDate: budgetData.StartDate || "",
               renewalFrequency: budgetData.RenewalFrequency || "",
+              autoRenewalEnabled: budgetData.AutoRenewalEnabled ?? false,
             });
           } else {
             Alert.alert("Error", "Budget not found. (ID: " + id + ")");
@@ -104,6 +107,7 @@ const EditBudgetPage: React.FC = () => {
         Reminder: data.reminder,
         StartDate: data.startDate,
         RenewalFrequency: data.renewalFrequency,
+        AutoRenewalEnabled: data.autoRenewalEnabled,
       };
 
       const result = await updateBudget(id!, budgetData);
@@ -272,6 +276,17 @@ const EditBudgetPage: React.FC = () => {
           render={({ field: { onChange, value } }) => (
             <View style={styles.switchContainer}>
               <Text style={styles.switchLabel}>Set Reminder</Text>
+              <Switch value={value} onValueChange={onChange} />
+            </View>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="autoRenewalEnabled"
+          render={({ field: { onChange, value } }) => (
+            <View style={styles.switchContainer}>
+              <Text style={styles.switchLabel}>Auto Renewal</Text>
               <Switch value={value} onValueChange={onChange} />
             </View>
           )}

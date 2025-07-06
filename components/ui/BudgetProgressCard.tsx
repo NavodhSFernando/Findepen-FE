@@ -12,8 +12,13 @@ interface BudgetProgressCardProps {
   reminder: boolean;
   startDate?: string;
   renewalFrequency?: string;
+  // Auto-renewal fields
+  autoRenewalEnabled?: boolean;
+  lastRenewalDate?: string;
+  endDate?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  onToggleAutoRenewal?: (enabled: boolean) => void;
 }
 
 const getNoteByProgress = (progress: number): string => {
@@ -64,8 +69,12 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
   reminder,
   startDate,
   renewalFrequency,
+  autoRenewalEnabled,
+  lastRenewalDate,
+  endDate,
   onEdit,
   onDelete,
+  onToggleAutoRenewal,
 }) => {
   // Debug: Log received props
   console.log("BudgetProgressCard received props:", {
@@ -76,6 +85,9 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
     reminder,
     startDate,
     renewalFrequency,
+    autoRenewalEnabled,
+    lastRenewalDate,
+    endDate,
   });
 
   // Add null checks and default values to prevent runtime errors
@@ -105,7 +117,12 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
         <View style={{ flex: 1 }}>
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.category}>{category}</Text>
+              <View style={styles.categoryRow}>
+                <Text style={styles.category}>{category}</Text>
+                {reminder && (
+                  <Icon name="bell-outline" size={16} color={Colors.primary} />
+                )}
+              </View>
               <Text style={styles.dateRangeText}>
                 {startDate ? formatDateRange(startDate, renewalFrequency) : ""}
               </Text>
@@ -119,11 +136,6 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
               </Text>
             </View>
           </View>
-        </View>
-        <View style={styles.reminderContainer}>
-          {reminder && (
-            <Icon name="bell-outline" size={16} color={Colors.primary} />
-          )}
         </View>
       </View>
 
@@ -150,6 +162,18 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
       <View style={styles.footer}>
         <Text style={styles.note}>{note}</Text>
         <View style={styles.icons}>
+          {/* Auto-renewal toggle */}
+          {onToggleAutoRenewal && (
+            <TouchableOpacity
+              onPress={() => onToggleAutoRenewal(!autoRenewalEnabled)}
+            >
+              <Icon
+                name={autoRenewalEnabled ? "refresh" : "refresh"}
+                size={20}
+                color={autoRenewalEnabled ? Colors.success : Colors.fadedText}
+              />
+            </TouchableOpacity>
+          )}
           {onEdit && (
             <TouchableOpacity onPress={onEdit}>
               <Icon name="pencil-outline" size={20} color={Colors.text} />
@@ -162,6 +186,29 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
           )}
         </View>
       </View>
+
+      {/* Auto-renewal status */}
+      {autoRenewalEnabled !== undefined && (
+        <View style={styles.autoRenewalContainer}>
+          <View style={styles.autoRenewalRow}>
+            <Icon
+              name="refresh"
+              size={16}
+              color={autoRenewalEnabled ? Colors.success : Colors.fadedText}
+            />
+            <Text
+              style={[
+                styles.autoRenewalText,
+                {
+                  color: autoRenewalEnabled ? Colors.success : Colors.fadedText,
+                },
+              ]}
+            >
+              Auto-renewal {autoRenewalEnabled ? "enabled" : "disabled"}
+            </Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -272,5 +319,25 @@ const styles = StyleSheet.create({
     fontFamily: "JakarthaRegular",
     marginTop: 2,
     textAlign: "right",
+  },
+  autoRenewalContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  autoRenewalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  autoRenewalText: {
+    fontSize: 12,
+    color: Colors.text,
+    fontFamily: "JakarthaRegular",
+    marginLeft: 5,
+  },
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 });

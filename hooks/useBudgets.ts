@@ -14,6 +14,10 @@ export interface Budget {
   Status: 'onTrack' | 'warning' | 'exceeded';
   NextRenewalDate: string;
   DaysRemainingInPeriod: number;
+  // Auto-renewal fields
+  AutoRenewalEnabled: boolean;
+  LastRenewalDate?: string;
+  EndDate?: string;
 }
 
 export interface BudgetSummary {
@@ -159,6 +163,25 @@ const useBudgets = () => {
     }
   };
 
+  const toggleAutoRenewal = async (id: string, enabled: boolean): Promise<boolean> => {
+    try {
+      setError(null);
+      const response = await api.put(`/budgets/${id}/auto-renewal`, {
+        autoRenewalEnabled: enabled
+      });
+      await Promise.all([fetchBudgets(), fetchSummary()]); // Refresh list and summary
+      return true;
+    } catch (err: any) {
+      console.error('Error toggling auto-renewal:', err);
+      if (err.response?.status === 401) {
+        setError('Please log in to modify auto-renewal settings');
+      } else {
+        setError(err.response?.data?.message || 'Failed to update auto-renewal setting');
+      }
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchBudgets();
     fetchSummary();
@@ -176,6 +199,7 @@ const useBudgets = () => {
     updateBudget,
     deleteBudget,
     getBudgetById,
+    toggleAutoRenewal,
   };
 };
 

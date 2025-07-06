@@ -27,6 +27,7 @@ const Index = () => {
     fetchBudgets,
     fetchSummary,
     deleteBudget,
+    toggleAutoRenewal,
   } = useBudgets();
   const router = useRouter();
 
@@ -60,6 +61,21 @@ const Index = () => {
   const handleEditBudget = (budgetId: string) => {
     console.log("Routing to edit page for budgetId:", budgetId);
     router.push(`/budget/edit?id=${budgetId}`);
+  };
+
+  const handleToggleAutoRenewal = async (
+    budgetId: string,
+    enabled: boolean
+  ) => {
+    const success = await toggleAutoRenewal(budgetId, enabled);
+    if (success) {
+      // Success message could be shown here if needed
+      console.log(
+        `Auto-renewal ${
+          enabled ? "enabled" : "disabled"
+        } for budget ${budgetId}`
+      );
+    }
   };
 
   const onRefresh = () => {
@@ -162,8 +178,14 @@ const Index = () => {
               reminder={budget.Reminder}
               startDate={budget.StartDate}
               renewalFrequency={budget.RenewalFrequency}
+              autoRenewalEnabled={budget.AutoRenewalEnabled}
+              lastRenewalDate={budget.LastRenewalDate}
+              endDate={budget.EndDate}
               onEdit={() => handleEditBudget(budget.Id)}
               onDelete={() => handleDeleteBudget(budget.Id, budget.Category)}
+              onToggleAutoRenewal={(enabled) =>
+                handleToggleAutoRenewal(budget.Id, enabled)
+              }
             />
           ))}
 
