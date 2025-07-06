@@ -40,8 +40,8 @@ const LoginPage: React.FC = () => {
       console.log("Logged in successfully:", response.data);
       router.push("/");
 
-      // Store token securely - Backend returns "token" (lowercase) due to JSON serialization
-      const token = response.data.token;
+      // Store token securely - Backend returns "Token" (capital T) due to JSON serialization
+      const token = response.data.Token;
       if (token) {
         await SecureStore.setItemAsync("authToken", token);
         console.log("Token stored successfully");

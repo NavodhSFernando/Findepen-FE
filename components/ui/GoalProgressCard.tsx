@@ -31,7 +31,11 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
   currentAmount,
   targetAmount,
 }) => {
-  const progress = currentAmount / targetAmount; // Progress percentage
+  // Add null checks and default values to prevent runtime errors
+  const safeCurrentAmount = currentAmount || 0;
+  const safeTargetAmount = targetAmount || 0;
+  const progress =
+    safeTargetAmount > 0 ? safeCurrentAmount / safeTargetAmount : 0; // Progress percentage
   const note = getNoteByProgress(progress);
 
   const targetDate = deadline.toLocaleDateString("en-US", {
@@ -49,8 +53,10 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
           <Text style={styles.date}>Deadline: {targetDate}</Text>
         </View>
         <View>
-          <Text style={styles.current}>Rs. {currentAmount.toFixed(2)}</Text>
-          <Text style={styles.target}>of Rs. {targetAmount.toFixed(2)}</Text>
+          <Text style={styles.current}>Rs. {safeCurrentAmount.toFixed(2)}</Text>
+          <Text style={styles.target}>
+            of Rs. {safeTargetAmount.toFixed(2)}
+          </Text>
         </View>
       </View>
 
@@ -67,7 +73,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
         />
         <View style={styles.progressTextContainer}>
           <Text style={styles.progressText}>
-            Rs. {currentAmount.toFixed(2)}
+            Rs. {safeCurrentAmount.toFixed(2)}
           </Text>
           <Text style={styles.progressPercentage}>
             {Math.round(progress * 100)}%

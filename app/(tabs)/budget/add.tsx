@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet } from "react-native";
-import React from "react";
+import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Colors } from "@/constants/Colors";
 import Title from "@/components/ui/Title";
@@ -7,56 +7,87 @@ import CircleButton from "@/components/ui/CircleButton";
 import { useRouter } from "expo-router";
 import InputField from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import Selector from "@/components/ui/Selector";
 import { Switch } from "react-native-gesture-handler";
-import axios from "axios";
 import { useForm, Controller } from "react-hook-form";
+import useBudgets from "@/hooks/useBudgets";
+import useCategories from "@/hooks/useCategories";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 interface BudgetForm {
-  name: string;
-  amount: string;
-  startDate: Date;
-  repeatMonthly: boolean;
+  category: string;
+  plannedAmount: string;
   reminder: boolean;
+  startDate: string;
+  renewalFrequency: string;
 }
 
 const AddBudgetPage: React.FC = () => {
   const router = useRouter();
+  const { createBudget } = useBudgets();
+  const { categories, loading: categoriesLoading } = useCategories();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
+    reset,
+    setValue,
+    watch,
   } = useForm<BudgetForm>({
     defaultValues: {
-      name: "",
-      amount: "",
-      startDate: new Date(),
-      repeatMonthly: false,
+      category: "",
+      plannedAmount: "",
       reminder: false,
+      startDate: new Date().toISOString().split("T")[0], // Today's date as default
+      renewalFrequency: "Monthly",
     },
   });
 
+  const selectedCategory = watch("category");
+
   const submitBudget = async (data: BudgetForm) => {
     try {
-      console.log("Budget data:", {
-        name: data.name,
-        amount: parseFloat(data.amount),
-        startDate: data.startDate,
-        repeatMonthly: data.repeatMonthly,
-        reminder: data.reminder,
-      });
-      // Uncomment when API is ready
-      // const response = await axios.post("http://192.168.1.6:5141/api/budgets", {
-      //   name: data.name,
-      //   amount: parseFloat(data.amount),
-      //   startDate: data.startDate,
-      //   repeatMonthly: data.repeatMonthly,
-      //   reminder: data.reminder,
-      // });
-      // console.log("Budget created successfully:", response.data);
+      setIsSubmitting(true);
 
-      router.back(); // Navigate back after successful submission
+      const apiBudgetData = {
+        Category: data.category,
+        PlannedAmount: parseFloat(data.plannedAmount),
+        Reminder: data.reminder,
+        StartDate: data.startDate,
+        RenewalFrequency: data.renewalFrequency,
+      };
+
+      const result = await createBudget(apiBudgetData);
+
+      if (result) {
+        Alert.alert("Success", "Budget created successfully", [
+          {
+            text: "OK",
+            onPress: () => {
+              reset();
+              handleGoBack();
+            },
+          },
+        ]);
+      } else {
+        Alert.alert("Error", "Failed to create budget. Please try again.");
+      }
     } catch (err) {
       console.error("Budget creation error:", err);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Robust go back handler
+  const handleGoBack = () => {
+    if (router.canGoBack && router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/budget");
     }
   };
 
@@ -71,7 +102,7 @@ const AddBudgetPage: React.FC = () => {
           <View style={styles.buttonContainer}>
             <CircleButton
               icon="chevron-back"
-              onPress={() => router.back()}
+              onPress={handleGoBack}
               size={40}
             />
           </View>
@@ -82,44 +113,47 @@ const AddBudgetPage: React.FC = () => {
       <View style={styles.bodyContainer}>
         <Controller
           control={control}
-          name="name"
-          rules={{ required: "Budget name is required" }}
-          render={({ field: { onChange, value } }) => (
-            <InputField
-              label="Name"
-              placeholder="Enter budget name"
-              type="text"
+          name="category"
+          rules={{ required: "Category is required" }}
+          render={({ field: { value } }) => (
+            <Selector
+              label="Category"
+              options={categories}
               value={value}
-              onChangeText={onChange}
+              onValueChange={(option) => setValue("category", option)}
+              disabled={categoriesLoading}
+              loading={categoriesLoading}
             />
           )}
         />
-        {errors.name && (
-          <Text style={styles.errorText}>{errors.name.message}</Text>
+        {errors.category && (
+          <Text style={styles.errorText}>{errors.category.message}</Text>
         )}
 
         <Controller
           control={control}
-          name="amount"
+          name="plannedAmount"
           rules={{
             required: "Amount is required",
             validate: {
               isPositive: (value) =>
                 parseFloat(value) > 0 || "Amount must be greater than 0",
+              isNumber: (value) =>
+                !isNaN(parseFloat(value)) || "Please enter a valid number",
             },
           }}
           render={({ field: { onChange, value } }) => (
             <InputField
-              label="Amount"
-              placeholder="Enter amount"
+              label="Planned Amount"
+              placeholder="Enter planned amount"
               type="number"
               value={value}
               onChangeText={onChange}
             />
           )}
         />
-        {errors.amount && (
-          <Text style={styles.errorText}>{errors.amount.message}</Text>
+        {errors.plannedAmount && (
+          <Text style={styles.errorText}>{errors.plannedAmount.message}</Text>
         )}
 
         <Controller
@@ -128,12 +162,11 @@ const AddBudgetPage: React.FC = () => {
           rules={{ required: "Start date is required" }}
           render={({ field: { onChange, value } }) => (
             <InputField
-              label="Set start date"
-              placeholder="Select date"
+              label="Start Date"
+              placeholder="Select start date"
               type="date"
-              value={value.toISOString().split("T")[0]}
+              value={value}
               onChangeText={onChange}
-              iconName="calendar"
             />
           )}
         />
@@ -143,21 +176,31 @@ const AddBudgetPage: React.FC = () => {
 
         <Controller
           control={control}
-          name="repeatMonthly"
-          render={({ field: { onChange, value } }) => (
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Repeat for every month</Text>
-              <Switch value={value} onValueChange={onChange} />
-            </View>
+          name="renewalFrequency"
+          rules={{ required: "Renewal frequency is required" }}
+          render={({ field: { value } }) => (
+            <Selector
+              label="Renewal Frequency"
+              options={["Weekly", "Monthly", "Yearly"]}
+              value={value}
+              onValueChange={(option) => setValue("renewalFrequency", option)}
+              disabled={false}
+              loading={false}
+            />
           )}
         />
+        {errors.renewalFrequency && (
+          <Text style={styles.errorText}>
+            {errors.renewalFrequency.message}
+          </Text>
+        )}
 
         <Controller
           control={control}
           name="reminder"
           render={({ field: { onChange, value } }) => (
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Reminder</Text>
+              <Text style={styles.switchLabel}>Set Reminder</Text>
               <Switch value={value} onValueChange={onChange} />
             </View>
           )}
@@ -165,10 +208,10 @@ const AddBudgetPage: React.FC = () => {
 
         <View style={styles.buttonWrapper}>
           <Button
-            title={isSubmitting ? "Saving..." : "Save"}
+            title={isSubmitting ? "Creating..." : "Create Budget"}
             onPress={handleSubmit(submitBudget)}
             variant="primary"
-            disabled={isSubmitting}
+            disabled={isSubmitting || categoriesLoading}
           />
         </View>
       </View>
@@ -208,6 +251,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 70,
     left: 40,
+    zIndex: 1000,
   },
   switchContainer: {
     flexDirection: "row",
@@ -230,5 +274,6 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     width: "100%",
     alignItems: "center",
+    marginTop: 20,
   },
 });

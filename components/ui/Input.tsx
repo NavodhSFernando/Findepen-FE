@@ -9,6 +9,7 @@ import {
 import React, { useEffect, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Icon from "react-native-vector-icons/FontAwesome";
+import { Colors } from "@/constants/Colors";
 
 interface InputProps extends TextInputProps {
   label: string;
@@ -109,8 +110,8 @@ const InputField: React.FC<InputProps> = ({
                 type === "number"
                   ? "numeric"
                   : type === "email"
-                    ? "email-address"
-                    : "default"
+                  ? "email-address"
+                  : "default"
               }
               secureTextEntry={type === "password" && !isPasswordVisible}
               {...props}
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 40,
     backgroundColor: "#fff",
-    borderColor: "#ccc",
+    borderColor: Colors.borderLight,
     borderWidth: 1,
     borderRadius: 5,
   },

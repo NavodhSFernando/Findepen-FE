@@ -8,6 +8,7 @@ import CircleButton from "@/components/ui/CircleButton";
 import GoalProgressCard from "@/components/ui/GoalProgressCard";
 
 type Goal = {
+  id: string;
   title: string;
   deadline: Date;
   currentAmount: number;
@@ -16,24 +17,28 @@ type Goal = {
 
 const MOCK_GOAL_DATA: Goal[] = [
   {
+    id: "1",
     title: "New Laptop",
     deadline: new Date("2025-06-30"),
     currentAmount: 350,
     targetAmount: 1200,
   },
   {
+    id: "2",
     title: "Vacation in Japan",
     deadline: new Date("2026-01-15"),
     currentAmount: 1000,
     targetAmount: 5000,
   },
   {
+    id: "3",
     title: "Emergency Fund",
     deadline: new Date("2025-12-31"),
     currentAmount: 1500,
     targetAmount: 3000,
   },
   {
+    id: "4",
     title: "Online Course Certificate",
     deadline: new Date("2025-08-01"),
     currentAmount: 200,
@@ -80,7 +85,7 @@ const index = () => {
         )}
         {goalData.map((goal, index) => (
           <GoalProgressCard
-            key={index}
+            key={goal.id}
             title={goal.title}
             deadline={goal.deadline}
             currentAmount={goal.currentAmount}

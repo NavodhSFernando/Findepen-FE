@@ -28,7 +28,8 @@ const TotalBalance: React.FC<TotalBalanceProps> = ({
 
 // Function to format the number as a currency string
 const formatCurrency = (amount: number) => {
-  return `Rs ${amount.toFixed(2)}`;
+  const safeAmount = amount || 0;
+  return `Rs ${safeAmount.toFixed(2)}`;
 };
 
 export default TotalBalance;

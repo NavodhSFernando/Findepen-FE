@@ -14,8 +14,9 @@ interface TransactionProps {
 
 // Function to format the number as a currency string
 const formatCurrency = (amount: number, type: string) => {
+  const safeAmount = amount || 0;
   const sign = type === "expense" ? "-" : "+";
-  return `${sign} Rs ${amount.toFixed(2)}`;
+  return `${sign} Rs ${safeAmount.toFixed(2)}`;
 };
 
 const Transaction: React.FC<TransactionProps> = ({

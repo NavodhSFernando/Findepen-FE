@@ -14,16 +14,28 @@ api.interceptors.request.use(
       const token = await getToken(); // Get token from SecureStore
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-      } else {
-        router.push('/login');
       }
+      // Don't redirect automatically - let components handle auth errors
     } catch (error) {
       console.error('Error retrieving token', error);
-      router.push('/login'); // Redirect in case of error
+      // Don't redirect automatically - let components handle auth errors
     }
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Response Interceptor to handle 401 errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear the stored token on 401 errors
+      SecureStore.deleteItemAsync("authToken").catch(console.error);
+      console.log("Token cleared due to 401 error");
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;

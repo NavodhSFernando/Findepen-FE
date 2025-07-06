@@ -5,11 +5,15 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Colors } from "@/constants/Colors";
 
 interface BudgetProgressCardProps {
+  id: string;
   category: string;
-  startDate: Date;
-  endDate: Date;
-  totalAmount: number;
+  plannedAmount: number;
   spentAmount: number;
+  reminder: boolean;
+  startDate?: string;
+  renewalFrequency?: string;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const getNoteByProgress = (progress: number): string => {
@@ -26,41 +30,100 @@ const getNoteByProgress = (progress: number): string => {
   }
 };
 
-const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
-  category,
-  startDate,
-  endDate,
-  totalAmount,
-  spentAmount,
-}) => {
-  const progress = spentAmount / totalAmount; // Progress percentage
-  const note = getNoteByProgress(progress);
+const getProgressColor = (progress: number): string => {
+  if (progress < 0.5) {
+    return Colors.success; // Green
+  } else if (progress < 0.8) {
+    return "#FF9800"; // Orange (keeping this as it's not in Colors.ts)
+  } else {
+    return Colors.error; // Red
+  }
+};
 
-  const start = startDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
+function formatDateRange(startDate?: string, renewalFrequency?: string) {
+  if (!startDate) return "";
+  const start = new Date(startDate);
+  let end = new Date(startDate);
+  if (renewalFrequency === "Monthly") {
+    end.setMonth(end.getMonth() + 1);
+  } else if (renewalFrequency === "Weekly") {
+    end.setDate(end.getDate() + 7);
+  } else if (renewalFrequency === "Yearly") {
+    end.setFullYear(end.getFullYear() + 1);
+  }
+  const format = (d: Date) =>
+    `${d.getDate()} ${d.toLocaleString("default", { month: "short" })}`;
+  return `${format(start)} - ${format(end)}`;
+}
+
+const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
+  id,
+  category,
+  plannedAmount,
+  spentAmount,
+  reminder,
+  startDate,
+  renewalFrequency,
+  onEdit,
+  onDelete,
+}) => {
+  // Debug: Log received props
+  console.log("BudgetProgressCard received props:", {
+    id,
+    category,
+    plannedAmount,
+    spentAmount,
+    reminder,
+    startDate,
+    renewalFrequency,
   });
 
-  const end = endDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
+  // Add null checks and default values to prevent runtime errors
+  const safePlannedAmount = Number(plannedAmount) || 0;
+  const safeSpentAmount = Number(spentAmount) || 0;
+  const progress =
+    safePlannedAmount > 0 ? safeSpentAmount / safePlannedAmount : 0; // Progress percentage
+  const note = getNoteByProgress(progress);
+  const progressColor = getProgressColor(progress);
+  const remainingAmount = safePlannedAmount - safeSpentAmount;
+  const percentLeft = 100 - Math.round(progress * 100);
+
+  // Debug: Log calculated values
+  console.log("BudgetProgressCard calculated values:", {
+    safePlannedAmount,
+    safeSpentAmount,
+    progress,
+    remainingAmount,
+    note,
+    progressColor,
   });
 
   return (
     <View style={styles.card}>
-      {/* Top Section */}
+      {/* Top Section - Compact Layout */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.category}>{category}</Text>
-          <Text style={styles.date}>
-            {start} - {end}
-          </Text>
+        <View style={{ flex: 1 }}>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.category}>{category}</Text>
+              <Text style={styles.dateRangeText}>
+                {startDate ? formatDateRange(startDate, renewalFrequency) : ""}
+              </Text>
+            </View>
+            <View style={styles.amountColumn}>
+              <Text style={styles.amount}>
+                Rs. {remainingAmount.toFixed(2)}
+              </Text>
+              <Text style={styles.amountLeft}>
+                left of Rs. {safePlannedAmount.toFixed(2)}
+              </Text>
+            </View>
+          </View>
         </View>
-        <View>
-          <Text style={styles.amount}>Rs. {spentAmount.toFixed(2)}</Text>
-          <Text style={styles.amountLeft}>
-            left of Rs. {totalAmount.toFixed(2)}
-          </Text>
+        <View style={styles.reminderContainer}>
+          {reminder && (
+            <Icon name="bell-outline" size={16} color={Colors.primary} />
+          )}
         </View>
       </View>
 
@@ -71,15 +134,15 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
           width={null}
           height={30}
           borderRadius={50}
-          color="#003366"
-          unfilledColor="#B3D9FF"
+          color={progressColor}
+          unfilledColor={Colors.secondary}
           borderWidth={0}
         />
         <View style={styles.progressTextContainer}>
-          <Text style={styles.progressText}>Rs. {spentAmount.toFixed(2)}</Text>
-          <Text style={styles.progressPercentage}>
-            {Math.round(progress * 100)}%
+          <Text style={styles.progressText}>
+            Rs. {safeSpentAmount.toFixed(2)}
           </Text>
+          <Text style={styles.progressPercentage}>{percentLeft}% left</Text>
         </View>
       </View>
 
@@ -87,12 +150,16 @@ const BudgetProgressCard: React.FC<BudgetProgressCardProps> = ({
       <View style={styles.footer}>
         <Text style={styles.note}>{note}</Text>
         <View style={styles.icons}>
-          <TouchableOpacity>
-            <Icon name="pencil-outline" size={20} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Icon name="trash-can-outline" size={20} color="#333" />
-          </TouchableOpacity>
+          {onEdit && (
+            <TouchableOpacity onPress={onEdit}>
+              <Icon name="pencil-outline" size={20} color={Colors.text} />
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity onPress={onDelete}>
+              <Icon name="trash-can-outline" size={20} color={Colors.error} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -103,12 +170,12 @@ export default BudgetProgressCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.neutral,
     padding: 15,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: Colors.fadedPrimary,
-    shadowColor: "#000",
+    shadowColor: Colors.text,
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
@@ -120,26 +187,42 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 10,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  amountColumn: {
+    alignItems: "flex-end",
+    minWidth: 110,
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  dateRangeText: {
+    fontSize: 11,
+    color: Colors.fadedText,
+    fontFamily: "JakarthaRegular",
+  },
   category: {
     fontSize: 16,
-    color: "#333",
+    color: Colors.text,
     fontFamily: "JakarthaBold",
-  },
-  date: {
-    fontSize: 10,
-    color: "#666",
-    fontFamily: "JakarthaRegular",
   },
   amount: {
     fontSize: 14,
-    textAlign: "right",
     fontFamily: "JakarthaBold",
+    color: Colors.text,
   },
   amountLeft: {
     fontSize: 12,
-    color: "#888",
-    textAlign: "right",
+    color: Colors.fadedText,
     fontFamily: "JakarthaRegular",
+  },
+  reminderContainer: {
+    alignItems: "flex-end",
   },
   progressContainer: {
     position: "relative",
@@ -174,11 +257,20 @@ const styles = StyleSheet.create({
   },
   note: {
     fontSize: 12,
-    color: "#555",
+    color: Colors.fadedText,
     fontFamily: "JakarthaRegular",
+    flex: 1,
+    marginRight: 10,
   },
   icons: {
     flexDirection: "row",
     gap: 15,
+  },
+  leftFadedText: {
+    fontSize: 11,
+    color: Colors.fadedText,
+    fontFamily: "JakarthaRegular",
+    marginTop: 2,
+    textAlign: "right",
   },
 });

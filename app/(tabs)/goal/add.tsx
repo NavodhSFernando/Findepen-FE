@@ -40,6 +40,15 @@ const AddGoalPage: React.FC = () => {
         amount: parseFloat(data.amount),
         reminder: data.reminder,
       });
+      // Only use PascalCase for API
+      const apiGoalData = {
+        Category: data.title,
+        TargetAmount: parseFloat(data.amount),
+        Deadline: data.deadline,
+        CurrentAmount: parseFloat(data.amount),
+        Reminder: data.reminder,
+      };
+
       // Uncomment when API is ready
       // const response = await axios.post("http://192.168.1.6:5141/api/budgets", {
       //   name: data.name,
@@ -50,9 +59,18 @@ const AddGoalPage: React.FC = () => {
       // });
       // console.log("Budget created successfully:", response.data);
 
-      router.back(); // Navigate back after successful submission
+      handleGoBack(); // Robust go back after successful submission
     } catch (err) {
       console.error("Budget creation error:", err);
+    }
+  };
+
+  // Robust go back handler
+  const handleGoBack = () => {
+    if (router.canGoBack && router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/goal");
     }
   };
 
@@ -67,7 +85,7 @@ const AddGoalPage: React.FC = () => {
           <View style={styles.buttonContainer}>
             <CircleButton
               icon="chevron-back"
-              onPress={() => router.back()}
+              onPress={() => handleGoBack()}
               size={40}
             />
           </View>
@@ -193,6 +211,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 70,
     left: 40,
+    zIndex: 1000,
   },
   switchContainer: {
     flexDirection: "row",
