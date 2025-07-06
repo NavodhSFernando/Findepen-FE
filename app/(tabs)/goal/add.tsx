@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import React from "react";
 import { useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
@@ -7,18 +7,25 @@ import { Colors } from "@/constants/Colors";
 import CircleButton from "@/components/ui/CircleButton";
 import Title from "@/components/ui/Title";
 import InputField from "@/components/ui/Input";
+import Selector from "@/components/ui/Selector";
 import { Switch } from "react-native-gesture-handler";
 import Button from "@/components/ui/Button";
+import useGoals from "@/hooks/useGoals";
 
 interface GoalForm {
   title: string;
-  deadline: Date;
-  amount: string;
+  description: string;
+  targetAmount: string;
+  targetDate: string;
+  priority: "High" | "Medium" | "Low";
+  status: "Active" | "Completed" | "Paused" | "Cancelled";
   reminder: boolean;
 }
 
 const AddGoalPage: React.FC = () => {
   const router = useRouter();
+  const { createGoal } = useGoals();
+
   const {
     control,
     handleSubmit,
@@ -26,42 +33,37 @@ const AddGoalPage: React.FC = () => {
   } = useForm<GoalForm>({
     defaultValues: {
       title: "",
-      deadline: new Date(),
-      amount: "",
+      description: "",
+      targetAmount: "",
+      targetDate: new Date().toISOString().split("T")[0],
+      priority: "Medium" as const,
+      status: "Active" as const,
       reminder: false,
     },
   });
 
   const submitGoal = async (data: GoalForm) => {
     try {
-      console.log("Budget data:", {
-        title: data.title,
-        deadline: data.deadline,
-        amount: parseFloat(data.amount),
-        reminder: data.reminder,
-      });
-      // Only use PascalCase for API
+      console.log("Goal data:", data);
+
       const apiGoalData = {
-        Category: data.title,
-        TargetAmount: parseFloat(data.amount),
-        Deadline: data.deadline,
-        CurrentAmount: parseFloat(data.amount),
+        Title: data.title,
+        Description: data.description,
+        TargetAmount: parseFloat(data.targetAmount),
+        TargetDate: data.targetDate,
+        Priority: data.priority,
+        Status: data.status,
         Reminder: data.reminder,
       };
 
-      // Uncomment when API is ready
-      // const response = await axios.post("http://192.168.1.6:5141/api/budgets", {
-      //   name: data.name,
-      //   amount: parseFloat(data.amount),
-      //   startDate: data.startDate,
-      //   repeatMonthly: data.repeatMonthly,
-      //   reminder: data.reminder,
-      // });
-      // console.log("Budget created successfully:", response.data);
-
-      handleGoBack(); // Robust go back after successful submission
+      const result = await createGoal(apiGoalData);
+      if (result) {
+        Alert.alert("Success", "Goal created successfully!");
+        handleGoBack();
+      }
     } catch (err) {
-      console.error("Budget creation error:", err);
+      console.error("Goal creation error:", err);
+      Alert.alert("Error", "Failed to create goal. Please try again.");
     }
   };
 
@@ -89,7 +91,7 @@ const AddGoalPage: React.FC = () => {
               size={40}
             />
           </View>
-          <Title text="Add Budget" />
+          <Title text="Add Goal" />
         </View>
       }
     >
@@ -97,11 +99,11 @@ const AddGoalPage: React.FC = () => {
         <Controller
           control={control}
           name="title"
-          rules={{ required: "Budget name is required" }}
+          rules={{ required: "Goal title is required" }}
           render={({ field: { onChange, value } }) => (
             <InputField
-              label="Name"
-              placeholder="Enter budget name"
+              label="Title"
+              placeholder="Enter goal title"
               type="text"
               value={value}
               onChangeText={onChange}
@@ -114,9 +116,23 @@ const AddGoalPage: React.FC = () => {
 
         <Controller
           control={control}
-          name="amount"
+          name="description"
+          render={({ field: { onChange, value } }) => (
+            <InputField
+              label="Description"
+              placeholder="Enter goal description (optional)"
+              type="text"
+              value={value}
+              onChangeText={onChange}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="targetAmount"
           rules={{
-            required: "Amount is required",
+            required: "Target amount is required",
             validate: {
               isPositive: (value) =>
                 parseFloat(value) > 0 || "Amount must be greater than 0",
@@ -124,36 +140,64 @@ const AddGoalPage: React.FC = () => {
           }}
           render={({ field: { onChange, value } }) => (
             <InputField
-              label="Amount"
-              placeholder="Enter amount"
+              label="Target Amount"
+              placeholder="Enter target amount"
               type="number"
               value={value}
               onChangeText={onChange}
             />
           )}
         />
-        {errors.amount && (
-          <Text style={styles.errorText}>{errors.amount.message}</Text>
+        {errors.targetAmount && (
+          <Text style={styles.errorText}>{errors.targetAmount.message}</Text>
         )}
 
         <Controller
           control={control}
-          name="deadline"
-          rules={{ required: "Deadline is required" }}
+          name="targetDate"
+          rules={{ required: "Target date is required" }}
           render={({ field: { onChange, value } }) => (
             <InputField
-              label="Set deadline"
-              placeholder="Select "
+              label="Target Date"
+              placeholder="Select target date"
               type="date"
-              value={value.toISOString().split("T")[0]}
+              value={value}
               onChangeText={onChange}
               iconName="calendar"
             />
           )}
         />
-        {errors.deadline && (
-          <Text style={styles.errorText}>{errors.deadline.message}</Text>
+        {errors.targetDate && (
+          <Text style={styles.errorText}>{errors.targetDate.message}</Text>
         )}
+
+        <Controller
+          control={control}
+          name="priority"
+          render={({ field: { onChange, value } }) => (
+            <Selector
+              label="Priority"
+              placeholder="Select priority"
+              options={["High", "Medium", "Low"]}
+              value={value}
+              onValueChange={onChange}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="status"
+          render={({ field: { onChange, value } }) => (
+            <Selector
+              label="Status"
+              placeholder="Select status"
+              options={["Active", "Completed", "Paused", "Cancelled"]}
+              value={value}
+              onValueChange={onChange}
+            />
+          )}
+        />
 
         <Controller
           control={control}
@@ -168,7 +212,7 @@ const AddGoalPage: React.FC = () => {
 
         <View style={styles.buttonWrapper}>
           <Button
-            title={isSubmitting ? "Saving..." : "Save"}
+            title={isSubmitting ? "Saving..." : "Save Goal"}
             onPress={handleSubmit(submitGoal)}
             variant="primary"
             disabled={isSubmitting}
@@ -213,6 +257,7 @@ const styles = StyleSheet.create({
     left: 40,
     zIndex: 1000,
   },
+
   switchContainer: {
     flexDirection: "row",
     justifyContent: "space-between",

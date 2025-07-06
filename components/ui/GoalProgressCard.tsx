@@ -1,14 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import * as Progress from "react-native-progress";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Colors } from "@/constants/Colors";
+import { Goal } from "@/hooks/useGoals";
 
 interface GoalProgressCardProps {
-  title: string;
-  deadline: Date;
-  currentAmount: number;
-  targetAmount: number;
+  goal: Goal;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onAddFunds?: () => void;
+  onWithdrawFunds?: () => void;
+  onConvertToExpense?: () => void;
 }
 
 const getNoteByProgress = (progress: number): string => {
@@ -26,37 +29,86 @@ const getNoteByProgress = (progress: number): string => {
 };
 
 const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
-  title,
-  deadline,
-  currentAmount,
-  targetAmount,
+  goal,
+  onEdit,
+  onDelete,
+  onAddFunds,
+  onWithdrawFunds,
+  onConvertToExpense,
 }) => {
   // Add null checks and default values to prevent runtime errors
-  const safeCurrentAmount = currentAmount || 0;
-  const safeTargetAmount = targetAmount || 0;
+  const safeCurrentAmount = goal.CurrentAmount || 0;
+  const safeTargetAmount = goal.TargetAmount || 0;
   const progress =
     safeTargetAmount > 0 ? safeCurrentAmount / safeTargetAmount : 0; // Progress percentage
   const note = getNoteByProgress(progress);
 
-  const targetDate = deadline.toLocaleDateString("en-US", {
+  const targetDate = new Date(goal.TargetDate).toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
     year: "numeric",
   });
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "High":
+        return Colors.error;
+      case "Medium":
+        return "#FF9800";
+      case "Low":
+        return Colors.success;
+      default:
+        return Colors.text;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "Active":
+        return "play-circle-outline";
+      case "Completed":
+        return "check-circle-outline";
+      case "Paused":
+        return "pause-circle-outline";
+      case "Cancelled":
+        return "close-circle-outline";
+      default:
+        return "circle-outline";
+    }
+  };
+
   return (
     <View style={styles.card}>
       {/* Top Section */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.category}>{title}</Text>
-          <Text style={styles.date}>Deadline: {targetDate}</Text>
-        </View>
-        <View>
-          <Text style={styles.current}>Rs. {safeCurrentAmount.toFixed(2)}</Text>
-          <Text style={styles.target}>
-            of Rs. {safeTargetAmount.toFixed(2)}
-          </Text>
+        <View style={{ flex: 1 }}>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.categoryRow}>
+                <Text style={styles.category}>{goal.Title}</Text>
+                {goal.Reminder && (
+                  <Icon name="bell-outline" size={16} color={Colors.primary} />
+                )}
+                <Icon
+                  name={getStatusIcon(goal.Status)}
+                  size={16}
+                  color={getPriorityColor(goal.Priority)}
+                />
+              </View>
+              <Text style={styles.date}>Deadline: {targetDate}</Text>
+              {goal.Description && (
+                <Text style={styles.description}>{goal.Description}</Text>
+              )}
+            </View>
+            <View style={styles.amountColumn}>
+              <Text style={styles.current}>
+                Rs. {safeCurrentAmount.toFixed(2)}
+              </Text>
+              <Text style={styles.target}>
+                of Rs. {safeTargetAmount.toFixed(2)}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
 
@@ -67,8 +119,8 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
           width={null}
           height={30}
           borderRadius={50}
-          color="#003366"
-          unfilledColor="#B3D9FF"
+          color={Colors.primary}
+          unfilledColor={Colors.secondary}
           borderWidth={0}
         />
         <View style={styles.progressTextContainer}>
@@ -85,15 +137,31 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
       <View style={styles.footer}>
         <Text style={styles.note}>{note}</Text>
         <View style={styles.icons}>
-          <TouchableOpacity>
-            <Icon name="plus" size={20} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Icon name="pencil-outline" size={20} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Icon name="trash-can-outline" size={20} color="#333" />
-          </TouchableOpacity>
+          {onAddFunds && (
+            <TouchableOpacity onPress={onAddFunds}>
+              <Icon name="plus" size={20} color={Colors.success} />
+            </TouchableOpacity>
+          )}
+          {onWithdrawFunds && (
+            <TouchableOpacity onPress={onWithdrawFunds}>
+              <Icon name="minus" size={20} color="#FF9800" />
+            </TouchableOpacity>
+          )}
+          {onConvertToExpense && (
+            <TouchableOpacity onPress={onConvertToExpense}>
+              <Icon name="currency-usd" size={20} color={Colors.primary} />
+            </TouchableOpacity>
+          )}
+          {onEdit && (
+            <TouchableOpacity onPress={onEdit}>
+              <Icon name="pencil-outline" size={20} color={Colors.text} />
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity onPress={onDelete}>
+              <Icon name="trash-can-outline" size={20} color={Colors.error} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -104,12 +172,12 @@ export default GoalProgressCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.neutral,
     padding: 15,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.fadedPrimary,
-    shadowColor: "#000",
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    shadowColor: Colors.text,
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
@@ -121,24 +189,45 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 10,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  amountColumn: {
+    alignItems: "flex-end",
+    minWidth: 110,
+  },
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   category: {
     fontSize: 16,
-    color: "#333",
+    color: Colors.text,
     fontFamily: "JakarthaBold",
   },
   date: {
     fontSize: 10,
-    color: "#666",
+    color: Colors.fadedText,
     fontFamily: "JakarthaRegular",
+  },
+  description: {
+    fontSize: 12,
+    color: Colors.fadedText,
+    fontFamily: "JakarthaRegular",
+    marginTop: 2,
   },
   current: {
     fontSize: 14,
     textAlign: "right",
     fontFamily: "JakarthaBold",
+    color: Colors.text,
   },
   target: {
     fontSize: 12,
-    color: "#888",
+    color: Colors.fadedText,
     textAlign: "right",
     fontFamily: "JakarthaRegular",
   },
@@ -160,7 +249,8 @@ const styles = StyleSheet.create({
     fontFamily: "JakarthaBold",
     textShadowColor: Colors.text,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 1,
+    textShadowRadius: 4,
+    shadowOpacity: 1,
   },
   progressPercentage: {
     fontSize: 12,
@@ -175,8 +265,10 @@ const styles = StyleSheet.create({
   },
   note: {
     fontSize: 12,
-    color: "#555",
+    color: Colors.fadedText,
     fontFamily: "JakarthaRegular",
+    flex: 1,
+    marginRight: 10,
   },
   icons: {
     flexDirection: "row",

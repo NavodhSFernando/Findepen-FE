@@ -289,7 +289,8 @@ const styles = StyleSheet.create({
     fontFamily: "JakarthaBold",
     textShadowColor: Colors.text,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 1,
+    textShadowRadius: 4,
+    shadowOpacity: 1,
   },
   progressPercentage: {
     fontSize: 12,
