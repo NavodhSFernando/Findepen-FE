@@ -7,15 +7,21 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useRouter } from "expo-router";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Colors } from "@/constants/Colors";
 import Title from "@/components/ui/Title";
 import CircleButton from "@/components/ui/CircleButton";
 import GoalProgressCard from "@/components/ui/GoalProgressCard";
+import AddFundsModal from "@/components/ui/AddFundsModal";
+import WithdrawFundsModal from "@/components/ui/WithdrawFundsModal";
 import useGoals from "@/hooks/useGoals";
 import { useFocusEffect } from "expo-router";
+import { Goal } from "@/hooks/useGoals";
+import useTransactions from "@/hooks/useTransactions";
+import ConvertToExpenseModal from "@/components/ui/ConvertToExpenseModal";
+import useCategories from "@/hooks/useCategories";
 
 const index = () => {
   const router = useRouter();
@@ -32,6 +38,19 @@ const index = () => {
     withdrawFundsFromGoal,
     convertGoalToExpense,
   } = useGoals();
+
+  // Get user balance from useTransactions
+  const { balance } = useTransactions();
+
+  // Modal state
+  const [addFundsModalVisible, setAddFundsModalVisible] = useState(false);
+  const [withdrawFundsModalVisible, setWithdrawFundsModalVisible] =
+    useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [convertModalVisible, setConvertModalVisible] = useState(false);
+
+  // Categories for expense
+  const { categories } = useCategories();
 
   useFocusEffect(
     useCallback(() => {
@@ -63,6 +82,96 @@ const index = () => {
 
   const handleLogin = () => {
     router.push("/login");
+  };
+
+  // Handle add funds
+  const handleAddFunds = async (amount: number, note?: string) => {
+    if (!selectedGoal) return false;
+
+    try {
+      const result = await addFundsToGoal(selectedGoal.Id, { amount, note });
+      if (result) {
+        Alert.alert("Success", "Funds added to goal successfully!");
+        return true;
+      } else {
+        Alert.alert("Error", "Failed to add funds to goal");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error adding funds:", error);
+      Alert.alert("Error", "Failed to add funds to goal");
+      return false;
+    }
+  };
+
+  // Handle withdraw funds
+  const handleWithdrawFunds = async (amount: number, note?: string) => {
+    if (!selectedGoal) return false;
+
+    try {
+      const result = await withdrawFundsFromGoal(selectedGoal.Id, {
+        amount,
+        note,
+      });
+      if (result) {
+        Alert.alert("Success", "Funds withdrawn from goal successfully!");
+        return true;
+      } else {
+        Alert.alert("Error", "Failed to withdraw funds from goal");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error withdrawing funds:", error);
+      Alert.alert("Error", "Failed to withdraw funds from goal");
+      return false;
+    }
+  };
+
+  // Open add funds modal
+  const openAddFundsModal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setAddFundsModalVisible(true);
+  };
+
+  // Open withdraw funds modal
+  const openWithdrawFundsModal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setWithdrawFundsModalVisible(true);
+  };
+
+  // Open convert to expense modal
+  const openConvertModal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setConvertModalVisible(true);
+  };
+
+  // Handle convert to expense
+  const handleConvertToExpense = async ({
+    amount,
+    transactionTitle,
+    transactionDescription,
+    category,
+  }: any) => {
+    if (!selectedGoal) return false;
+    try {
+      const result = await convertGoalToExpense(selectedGoal.Id, {
+        amount,
+        transactionTitle,
+        transactionDescription,
+        category,
+      });
+      if (result) {
+        Alert.alert("Success", "Goal converted to expense successfully!");
+        return true;
+      } else {
+        Alert.alert("Error", "Failed to convert goal to expense");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error converting goal to expense:", error);
+      Alert.alert("Error", "Failed to convert goal to expense");
+      return false;
+    }
   };
 
   // Debug log to inspect goals data
@@ -171,27 +280,9 @@ const index = () => {
               goal={goal}
               onEdit={() => router.push(`/goal/edit?id=${goal.Id}`)}
               onDelete={() => handleDeleteGoal(goal.Id, goal.Title)}
-              onAddFunds={() => {
-                // TODO: Implement add funds modal
-                Alert.alert(
-                  "Add Funds",
-                  "Add funds functionality coming soon!"
-                );
-              }}
-              onWithdrawFunds={() => {
-                // TODO: Implement withdraw funds modal
-                Alert.alert(
-                  "Withdraw Funds",
-                  "Withdraw funds functionality coming soon!"
-                );
-              }}
-              onConvertToExpense={() => {
-                // TODO: Implement convert to expense modal
-                Alert.alert(
-                  "Convert to Expense",
-                  "Convert to expense functionality coming soon!"
-                );
-              }}
+              onAddFunds={() => openAddFundsModal(goal)}
+              onWithdrawFunds={() => openWithdrawFundsModal(goal)}
+              onConvertToExpense={() => openConvertModal(goal)}
             />
           ))}
 
@@ -205,6 +296,32 @@ const index = () => {
           )}
         </View>
       </ScrollView>
+
+      {/* Add Funds Modal */}
+      <AddFundsModal
+        visible={addFundsModalVisible}
+        onClose={() => setAddFundsModalVisible(false)}
+        goal={selectedGoal}
+        userBalance={balance}
+        onAddFunds={handleAddFunds}
+      />
+
+      {/* Withdraw Funds Modal */}
+      <WithdrawFundsModal
+        visible={withdrawFundsModalVisible}
+        onClose={() => setWithdrawFundsModalVisible(false)}
+        goal={selectedGoal}
+        onWithdrawFunds={handleWithdrawFunds}
+      />
+
+      {/* Convert To Expense Modal */}
+      <ConvertToExpenseModal
+        visible={convertModalVisible}
+        onClose={() => setConvertModalVisible(false)}
+        goal={selectedGoal}
+        categories={categories}
+        onConvert={handleConvertToExpense}
+      />
     </ParallaxScrollView>
   );
 };

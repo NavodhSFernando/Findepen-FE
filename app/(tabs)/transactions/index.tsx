@@ -17,7 +17,7 @@ import { TransactionInputMethodSelector } from "@/components/ui/TransactionInput
 import TotalBalance from "@/components/ui/TotalBalance";
 import TotalExpenses from "@/components/ui/TotalExpenses";
 import Transaction from "@/components/ui/Transaction";
-import { Ionicons } from "@expo/vector-icons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import useTransactions from "@/hooks/useTransactions";
 
 // Transaction type for type safety
@@ -30,9 +30,6 @@ interface TransactionType {
   Type: "Income" | "Expense";
   Date: string;
 }
-
-// TODO: Replace with real token from context/secure storage
-const DUMMY_TOKEN = "YOUR_JWT_TOKEN_HERE";
 
 type GroupedTransactions = {
   [key: string]: TransactionType[];
@@ -118,7 +115,7 @@ const TransactionsPage = () => {
         {/* Custom Search Bar Row */}
         <View style={styles.searchRow}>
           <View style={styles.searchBarContainer}>
-            <Ionicons
+            <MaterialCommunityIcons
               name="search"
               size={16}
               color={Colors.fadedText}
@@ -137,7 +134,7 @@ const TransactionsPage = () => {
             />
           </View>
           <TouchableOpacity style={styles.filterButton}>
-            <Ionicons
+            <MaterialCommunityIcons
               name="options-outline"
               size={16}
               color={Colors.borderLight}

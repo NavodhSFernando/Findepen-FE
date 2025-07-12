@@ -56,16 +56,19 @@ export interface UpdateGoalData {
 
 export interface AddFundsData {
   amount: number;
+  note?: string;
 }
 
 export interface WithdrawFundsData {
   amount: number;
+  note?: string;
 }
 
 export interface ConvertToExpenseData {
   amount: number;
+  transactionTitle: string;
+  transactionDescription?: string;
   category: string;
-  description: string;
 }
 
 const useGoals = () => {

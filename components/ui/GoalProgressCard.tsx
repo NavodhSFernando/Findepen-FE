@@ -102,10 +102,10 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             </View>
             <View style={styles.amountColumn}>
               <Text style={styles.current}>
-                Rs. {safeCurrentAmount.toFixed(2)}
+                Rs. {(safeCurrentAmount ?? 0).toFixed(2)}
               </Text>
               <Text style={styles.target}>
-                of Rs. {safeTargetAmount.toFixed(2)}
+                of Rs. {(safeTargetAmount ?? 0).toFixed(2)}
               </Text>
             </View>
           </View>
@@ -125,7 +125,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
         />
         <View style={styles.progressTextContainer}>
           <Text style={styles.progressText}>
-            Rs. {safeCurrentAmount.toFixed(2)}
+            Rs. {(safeCurrentAmount ?? 0).toFixed(2)}
           </Text>
           <Text style={styles.progressPercentage}>
             {Math.round(progress * 100)}%
@@ -147,7 +147,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
               <Icon name="minus" size={20} color="#FF9800" />
             </TouchableOpacity>
           )}
-          {onConvertToExpense && (
+          {onConvertToExpense && goal.CurrentAmount >= goal.TargetAmount && (
             <TouchableOpacity onPress={onConvertToExpense}>
               <Icon name="currency-usd" size={20} color={Colors.primary} />
             </TouchableOpacity>
