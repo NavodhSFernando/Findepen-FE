@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
-import React, { useState, useMemo } from "react";
-import { useRouter } from "expo-router";
+import React, { useState, useMemo, useCallback } from "react";
+import { useRouter, useFocusEffect } from "expo-router";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Colors } from "@/constants/Colors";
 import CircleButton from "@/components/ui/CircleButton";
@@ -66,8 +66,24 @@ const TransactionsPage = () => {
   const router = useRouter();
   const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
   const [search, setSearch] = useState("");
-  const { transactions, balance, expenses, loading, error, isAuthenticated } =
-    useTransactions();
+  const {
+    transactions,
+    balance,
+    expenses,
+    loading,
+    error,
+    isAuthenticated,
+    fetchTransactions,
+    fetchBalance,
+  } = useTransactions();
+
+  // Refresh transactions when the page comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions();
+      fetchBalance();
+    }, [])
+  );
 
   const filteredGroups = useMemo(() => {
     const filtered = search
@@ -116,7 +132,7 @@ const TransactionsPage = () => {
         <View style={styles.searchRow}>
           <View style={styles.searchBarContainer}>
             <MaterialCommunityIcons
-              name="search"
+              name="clipboard-search-outline"
               size={16}
               color={Colors.fadedText}
               style={{ marginLeft: 10 }}
@@ -135,7 +151,7 @@ const TransactionsPage = () => {
           </View>
           <TouchableOpacity style={styles.filterButton}>
             <MaterialCommunityIcons
-              name="options-outline"
+              name="filter-variant"
               size={16}
               color={Colors.borderLight}
             />

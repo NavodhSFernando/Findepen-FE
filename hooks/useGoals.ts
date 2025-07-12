@@ -219,11 +219,24 @@ const useGoals = () => {
   const convertGoalToExpense = async (id: string, expenseData: ConvertToExpenseData): Promise<Goal | null> => {
     try {
       setError(null);
+      console.log('Converting goal to expense:', { id, expenseData });
       const response = await api.post(`/goals/${id}/convert-to-expense`, expenseData);
+      console.log('Convert to expense response:', response.data);
+      
+      // Refresh goals and summary after successful conversion
       await Promise.all([fetchGoals(), fetchSummary()]);
+      
+      // Note: Transaction refresh should be handled by the calling component
+      // since useGoals doesn't have access to useTransactions
+      
       return response.data;
     } catch (err: any) {
       console.error('Error converting goal to expense:', err);
+      console.error('Error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
       if (err.response?.status === 401) {
         setError('Please log in to convert goals to expenses');
       } else {

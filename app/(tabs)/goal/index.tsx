@@ -39,8 +39,8 @@ const index = () => {
     convertGoalToExpense,
   } = useGoals();
 
-  // Get user balance from useTransactions
-  const { balance } = useTransactions();
+  // Get user balance and transaction refresh functions from useTransactions
+  const { balance, fetchTransactions, fetchBalance } = useTransactions();
 
   // Modal state
   const [addFundsModalVisible, setAddFundsModalVisible] = useState(false);
@@ -78,6 +78,8 @@ const index = () => {
   const onRefresh = () => {
     fetchGoals();
     fetchSummary();
+    fetchTransactions();
+    fetchBalance();
   };
 
   const handleLogin = () => {
@@ -91,6 +93,8 @@ const index = () => {
     try {
       const result = await addFundsToGoal(selectedGoal.Id, { amount, note });
       if (result) {
+        // Refresh balance after adding funds to goal
+        await fetchBalance();
         Alert.alert("Success", "Funds added to goal successfully!");
         return true;
       } else {
@@ -114,6 +118,8 @@ const index = () => {
         note,
       });
       if (result) {
+        // Refresh balance after withdrawing funds from goal
+        await fetchBalance();
         Alert.alert("Success", "Funds withdrawn from goal successfully!");
         return true;
       } else {
@@ -129,20 +135,29 @@ const index = () => {
 
   // Open add funds modal
   const openAddFundsModal = (goal: Goal) => {
-    setSelectedGoal(goal);
-    setAddFundsModalVisible(true);
+    // Only allow for active goals
+    if (goal.Status === "Active" && goal.IsActive) {
+      setSelectedGoal(goal);
+      setAddFundsModalVisible(true);
+    }
   };
 
   // Open withdraw funds modal
   const openWithdrawFundsModal = (goal: Goal) => {
-    setSelectedGoal(goal);
-    setWithdrawFundsModalVisible(true);
+    // Only allow for active goals
+    if (goal.Status === "Active" && goal.IsActive) {
+      setSelectedGoal(goal);
+      setWithdrawFundsModalVisible(true);
+    }
   };
 
   // Open convert to expense modal
   const openConvertModal = (goal: Goal) => {
-    setSelectedGoal(goal);
-    setConvertModalVisible(true);
+    // Only allow for completed goals (target reached)
+    if (goal.CurrentAmount >= goal.TargetAmount) {
+      setSelectedGoal(goal);
+      setConvertModalVisible(true);
+    }
   };
 
   // Handle convert to expense
@@ -154,13 +169,28 @@ const index = () => {
   }: any) => {
     if (!selectedGoal) return false;
     try {
+      console.log("handleConvertToExpense called with:", {
+        goalId: selectedGoal.Id,
+        amount,
+        transactionTitle,
+        transactionDescription,
+        category,
+      });
+
       const result = await convertGoalToExpense(selectedGoal.Id, {
         amount,
         transactionTitle,
         transactionDescription,
         category,
       });
+
+      console.log("convertGoalToExpense result:", result);
+
       if (result) {
+        // Refresh transactions after successful conversion
+        // Note: Balance is NOT refreshed because goal conversion doesn't affect user balance
+        // The goal funds are used for the expense, not the user's current balance
+        await fetchTransactions();
         Alert.alert("Success", "Goal converted to expense successfully!");
         return true;
       } else {

@@ -137,30 +137,44 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
       <View style={styles.footer}>
         <Text style={styles.note}>{note}</Text>
         <View style={styles.icons}>
-          {onAddFunds && (
-            <TouchableOpacity onPress={onAddFunds}>
-              <Icon name="plus" size={20} color={Colors.success} />
-            </TouchableOpacity>
-          )}
-          {onWithdrawFunds && (
-            <TouchableOpacity onPress={onWithdrawFunds}>
-              <Icon name="minus" size={20} color="#FF9800" />
-            </TouchableOpacity>
-          )}
-          {onConvertToExpense && goal.CurrentAmount >= goal.TargetAmount && (
-            <TouchableOpacity onPress={onConvertToExpense}>
-              <Icon name="currency-usd" size={20} color={Colors.primary} />
-            </TouchableOpacity>
-          )}
-          {onEdit && (
-            <TouchableOpacity onPress={onEdit}>
-              <Icon name="pencil-outline" size={20} color={Colors.text} />
-            </TouchableOpacity>
-          )}
-          {onDelete && (
-            <TouchableOpacity onPress={onDelete}>
-              <Icon name="trash-can-outline" size={20} color={Colors.error} />
-            </TouchableOpacity>
+          {/* Only show action buttons for active goals */}
+          {goal.Status === "Active" && goal.IsActive && (
+            <>
+              {onAddFunds && (
+                <TouchableOpacity onPress={onAddFunds}>
+                  <Icon name="plus" size={20} color={Colors.success} />
+                </TouchableOpacity>
+              )}
+              {onWithdrawFunds && (
+                <TouchableOpacity onPress={onWithdrawFunds}>
+                  <Icon name="minus" size={20} color="#FF9800" />
+                </TouchableOpacity>
+              )}
+              {onConvertToExpense &&
+                goal.CurrentAmount >= goal.TargetAmount && (
+                  <TouchableOpacity onPress={onConvertToExpense}>
+                    <Icon
+                      name="currency-usd"
+                      size={20}
+                      color={Colors.primary}
+                    />
+                  </TouchableOpacity>
+                )}
+              {onEdit && (
+                <TouchableOpacity onPress={onEdit}>
+                  <Icon name="pencil-outline" size={20} color={Colors.text} />
+                </TouchableOpacity>
+              )}
+              {onDelete && (
+                <TouchableOpacity onPress={onDelete}>
+                  <Icon
+                    name="trash-can-outline"
+                    size={20}
+                    color={Colors.error}
+                  />
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </View>
       </View>
