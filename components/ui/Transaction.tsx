@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Colors } from "@/constants/Colors";
 import { Image } from "react-native";
 
@@ -10,6 +10,7 @@ interface TransactionProps {
   category: string;
   amount: number;
   date: string;
+  onPress?: () => void;
 }
 
 // Function to format the number as a currency string
@@ -26,8 +27,9 @@ const Transaction: React.FC<TransactionProps> = ({
   category,
   amount,
   date,
+  onPress,
 }) => {
-  return (
+  const TransactionContent = () => (
     <View
       style={[
         styles.transactionItem,
@@ -52,6 +54,16 @@ const Transaction: React.FC<TransactionProps> = ({
       <Text style={styles.amount}>{formatCurrency(amount, type)}</Text>
     </View>
   );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <TransactionContent />
+      </TouchableOpacity>
+    );
+  }
+
+  return <TransactionContent />;
 };
 
 const styles = StyleSheet.create({

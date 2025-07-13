@@ -18,6 +18,21 @@ export interface BalanceSummary {
   MonthlyNet: number;
 }
 
+export interface GoalSummary {
+  TotalGoals: number;
+  ActiveGoals: number;
+  CompletedGoals: number;
+  OverdueGoals: number;
+  TotalTargetAmount: number;
+  TotalCurrentAmount: number;
+  TotalRemainingAmount: number;
+  OverallProgressPercentage: number;
+  TotalMonthlyRequired: number;
+  TotalWeeklyRequired: number;
+  PriorityBreakdown: Record<string, number>;
+  StatusBreakdown: Record<string, number>;
+}
+
 export interface CreateTransactionData {
   Title: string;
   Description?: string;
@@ -40,6 +55,7 @@ const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [balance, setBalance] = useState<number>(0);
   const [expenses, setExpenses] = useState<number>(0);
+  const [reserves, setReserves] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -80,6 +96,16 @@ const useTransactions = () => {
       console.error('Error fetching balance:', err);
       setBalance(0);
       setExpenses(0);
+    }
+  };
+
+  const fetchReserves = async () => {
+    try {
+      const response = await api.get('/goals/summary');
+      setReserves(response.data.TotalCurrentAmount || 0);
+    } catch (err: any) {
+      console.error('Error fetching reserves:', err);
+      setReserves(0);
     }
   };
 
@@ -152,17 +178,20 @@ const useTransactions = () => {
   useEffect(() => {
     fetchTransactions();
     fetchBalance();
+    fetchReserves();
   }, []);
 
   return {
     transactions,
     balance,
     expenses,
+    reserves,
     loading,
     error,
     isAuthenticated,
     fetchTransactions,
     fetchBalance,
+    fetchReserves,
     createTransaction,
     updateTransaction,
     deleteTransaction,

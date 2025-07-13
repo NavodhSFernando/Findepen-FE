@@ -17,6 +17,8 @@ export const Colors = {
   fadedText: '#7a7979',
   error: '#E74C3C',
   success: '#4CD964',
+  white: '#ffffff',
+  errorLight: '#f8f9fa',
   light: {
     text: '#11181C',
     background: '#fff',

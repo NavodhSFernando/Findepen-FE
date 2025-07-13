@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   errorContainer: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: Colors.errorLight,
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     fontFamily: "JakarthaBold",
   },
   summaryContainer: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: Colors.errorLight,
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,

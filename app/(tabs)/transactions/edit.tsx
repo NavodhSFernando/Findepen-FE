@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, Alert } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Colors } from "@/constants/Colors";
 import Title from "@/components/ui/Title";
 import CircleButton from "@/components/ui/CircleButton";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import InputField from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Selector from "@/components/ui/Selector";
@@ -21,11 +21,14 @@ interface TransactionForm {
   date: string;
 }
 
-const AddTransactionPage: React.FC = () => {
+const EditTransactionPage: React.FC = () => {
   const router = useRouter();
-  const { createTransaction } = useTransactions();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { updateTransaction, getTransactionById } = useTransactions();
   const { categories, loading: categoriesLoading } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [transaction, setTransaction] = useState<any>(null);
 
   const {
     control,
@@ -41,17 +44,49 @@ const AddTransactionPage: React.FC = () => {
       amount: "",
       category: "",
       type: "Expense" as const,
-      date: new Date().toISOString().split("T")[0], // Today's date as default
+      date: "",
     },
   });
 
   const selectedType = watch("type");
 
+  useEffect(() => {
+    const fetchTransaction = async () => {
+      if (id) {
+        try {
+          const transactionData = await getTransactionById(id);
+          if (transactionData) {
+            setTransaction(transactionData);
+            reset({
+              title: transactionData.Title || "",
+              description: transactionData.Description || "",
+              amount: (transactionData.Amount || "").toString(),
+              category: transactionData.Category || "",
+              type: transactionData.Type || "Expense",
+              date: transactionData.Date || "",
+            });
+          } else {
+            Alert.alert("Error", "Transaction not found. (ID: " + id + ")");
+            router.replace("/transactions");
+          }
+        } catch (error) {
+          console.error("Error fetching transaction:", error);
+          Alert.alert("Error", "Failed to load transaction");
+          router.replace("/transactions");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchTransaction();
+  }, [id, reset, router]);
+
   const submitTransaction = async (data: TransactionForm) => {
     try {
       setIsSubmitting(true);
 
-      const apiTransactionData = {
+      const transactionData = {
         Title: data.title,
         Description: data.description || undefined,
         Amount: parseFloat(data.amount),
@@ -60,37 +95,35 @@ const AddTransactionPage: React.FC = () => {
         Date: data.date,
       };
 
-      const result = await createTransaction(apiTransactionData);
+      const result = await updateTransaction(id!, transactionData);
 
       if (result) {
-        Alert.alert("Success", "Transaction created successfully", [
+        Alert.alert("Success", "Transaction updated successfully", [
           {
             text: "OK",
             onPress: () => {
-              reset();
-              handleGoBack();
+              router.replace("/transactions");
             },
           },
         ]);
       } else {
-        Alert.alert("Error", "Failed to create transaction. Please try again.");
+        Alert.alert("Error", "Failed to update transaction. Please try again.");
       }
     } catch (err) {
-      console.error("Transaction creation error:", err);
+      console.error("Transaction update error:", err);
       Alert.alert("Error", "An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Robust go back handler
-  const handleGoBack = () => {
-    if (router.canGoBack && router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/transactions");
-    }
-  };
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading transaction...</Text>
+      </View>
+    );
+  }
 
   return (
     <ParallaxScrollView
@@ -103,11 +136,11 @@ const AddTransactionPage: React.FC = () => {
           <View style={styles.buttonContainer}>
             <CircleButton
               icon="chevron-back"
-              onPress={handleGoBack}
+              onPress={() => router.replace("/transactions")}
               size={40}
             />
           </View>
-          <Title text="Add Transaction" />
+          <Title text="Edit Transaction" />
         </View>
       }
     >
@@ -226,7 +259,7 @@ const AddTransactionPage: React.FC = () => {
 
         <View style={styles.buttonWrapper}>
           <Button
-            title={isSubmitting ? "Creating..." : "Create Transaction"}
+            title={isSubmitting ? "Updating..." : "Update Transaction"}
             onPress={handleSubmit(submitTransaction)}
             variant="primary"
             disabled={isSubmitting || categoriesLoading}
@@ -237,7 +270,7 @@ const AddTransactionPage: React.FC = () => {
   );
 };
 
-export default AddTransactionPage;
+export default EditTransactionPage;
 
 const styles = StyleSheet.create({
   topContainer: {
@@ -292,5 +325,15 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     width: "100%",
     alignItems: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.text,
   },
 });

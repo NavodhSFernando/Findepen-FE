@@ -11,6 +11,14 @@ export default function GoalLayout() {
         name="add"
         options={{ title: "Add Transaction", headerShown: false }}
       />
+      <Stack.Screen
+        name="view"
+        options={{ title: "View Transaction", headerShown: false }}
+      />
+      <Stack.Screen
+        name="edit"
+        options={{ title: "Edit Transaction", headerShown: false }}
+      />
     </Stack>
   );
 }

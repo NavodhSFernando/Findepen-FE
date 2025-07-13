@@ -6,6 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  RefreshControl,
+  ScrollView,
 } from "react-native";
 import React, { useState, useMemo, useCallback } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -16,6 +18,7 @@ import Title from "@/components/ui/Title";
 import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
 import TotalBalance from "@/components/ui/TotalBalance";
 import TotalExpenses from "@/components/ui/TotalExpenses";
+import TotalReserves from "@/components/ui/TotalReserves";
 import Transaction from "@/components/ui/Transaction";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import useTransactions from "@/hooks/useTransactions";
@@ -70,11 +73,13 @@ const TransactionsPage = () => {
     transactions,
     balance,
     expenses,
+    reserves,
     loading,
     error,
     isAuthenticated,
     fetchTransactions,
     fetchBalance,
+    fetchReserves,
   } = useTransactions();
 
   // Refresh transactions when the page comes into focus
@@ -82,6 +87,7 @@ const TransactionsPage = () => {
     useCallback(() => {
       fetchTransactions();
       fetchBalance();
+      fetchReserves();
     }, [])
   );
 
@@ -100,7 +106,20 @@ const TransactionsPage = () => {
   const handleInputMethodSelect = (method: "manual" | "scan" | "file") => {
     // Handle the selected input method
     console.log("Selected method:", method);
-    // Add logic to navigate or handle the selected method
+    if (method === "manual") {
+      router.push("/transactions/add");
+    }
+    // TODO: Add logic for scan and file methods
+  };
+
+  const onRefresh = () => {
+    fetchTransactions();
+    fetchBalance();
+    fetchReserves();
+  };
+
+  const handleLogin = () => {
+    router.push("/login");
   };
 
   return (
@@ -120,91 +139,121 @@ const TransactionsPage = () => {
             />
           </View>
           <View style={styles.summaryContainer}>
-            <TotalBalance totalBalance={balance} />
-            <View style={styles.vl} />
-            <TotalExpenses totalExpenses={expenses} />
+            <View style={styles.summaryRow}>
+              <TotalBalance totalBalance={balance} />
+              <View style={styles.vl} />
+              <TotalExpenses totalExpenses={expenses} />
+            </View>
+            <View style={styles.summaryRow}>
+              <TotalReserves totalReserves={reserves} />
+            </View>
           </View>
         </View>
       }
     >
-      <View style={styles.bodyContainer}>
-        {/* Custom Search Bar Row */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchBarContainer}>
-            <MaterialCommunityIcons
-              name="clipboard-search-outline"
-              size={16}
-              color={Colors.fadedText}
-              style={{ marginLeft: 10 }}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Transaction"
-              placeholderTextColor={Colors.fadedText}
-              value={search}
-              onChangeText={setSearch}
-              underlineColorAndroid="transparent"
-              selectionColor={Colors.primary}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.bodyContainer}>
+          {/* Custom Search Bar Row */}
+          <View style={styles.searchRow}>
+            <View style={styles.searchBarContainer}>
+              <MaterialCommunityIcons
+                name="clipboard-search-outline"
+                size={16}
+                color={Colors.fadedText}
+                style={{ marginLeft: 10 }}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search Transaction"
+                placeholderTextColor={Colors.fadedText}
+                value={search}
+                onChangeText={setSearch}
+                underlineColorAndroid="transparent"
+                selectionColor={Colors.primary}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            <TouchableOpacity style={styles.filterButton}>
+              <MaterialCommunityIcons
+                name="filter-variant"
+                size={16}
+                color={Colors.borderLight}
+              />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <MaterialCommunityIcons
-              name="filter-variant"
-              size={16}
-              color={Colors.borderLight}
-            />
-          </TouchableOpacity>
-        </View>
-        {/* End Custom Search Bar Row */}
-        {loading ? (
-          <ActivityIndicator
-            size="large"
-            color={Colors.primary}
-            style={{ marginTop: 40 }}
-          />
-        ) : error ? (
-          <Text style={{ color: Colors.error, marginTop: 40 }}>{error}</Text>
-        ) : filteredGroups.length === 0 ? (
-          <Text style={{ color: Colors.text, marginTop: 40 }}>
-            No transactions found.
-          </Text>
-        ) : (
-          <View style={{ width: "100%" }}>
-            {filteredGroups.map((item) => (
-              <View key={item.date} style={{ marginBottom: 24, width: "100%" }}>
-                <Text style={styles.sectionHeader}>{item.date}</Text>
-                <View style={styles.transactionList}>
-                  {item.transactions.map((tx) => (
-                    <Transaction
-                      key={tx.Id}
-                      id={
-                        typeof tx.Id === "number"
-                          ? tx.Id
-                          : parseInt(
-                              String(tx.Id)
-                                .replace(/[^0-9]/g, "")
-                                .slice(0, 8)
-                            ) || 0
-                      }
-                      title={tx.Title || ""}
-                      type={
-                        tx.Type && tx.Type.toLowerCase() === "income"
-                          ? "income"
-                          : "expense"
-                      }
-                      category={tx.Category || ""}
-                      amount={tx.Amount || 0}
-                      date={tx.Date || ""}
-                    />
-                  ))}
+          {/* End Custom Search Bar Row */}
+
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              {!isAuthenticated && (
+                <TouchableOpacity
+                  style={styles.loginButton}
+                  onPress={handleLogin}
+                >
+                  <Text style={styles.loginButtonText}>Log In</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {!loading && filteredGroups.length === 0 && !error && (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No transactions found</Text>
+              <Text style={styles.emptySubtext}>
+                Add your first transaction to get started
+              </Text>
+            </View>
+          )}
+
+          {filteredGroups.length > 0 && (
+            <View style={{ width: "100%" }}>
+              {filteredGroups.map((item) => (
+                <View
+                  key={item.date}
+                  style={{ marginBottom: 24, width: "100%" }}
+                >
+                  <Text style={styles.sectionHeader}>{item.date}</Text>
+                  <View style={styles.transactionList}>
+                    {item.transactions.map((tx) => (
+                      <Transaction
+                        key={tx.Id}
+                        id={
+                          typeof tx.Id === "number"
+                            ? tx.Id
+                            : parseInt(
+                                String(tx.Id)
+                                  .replace(/[^0-9]/g, "")
+                                  .slice(0, 8)
+                              ) || 0
+                        }
+                        title={tx.Title || ""}
+                        type={
+                          tx.Type && tx.Type.toLowerCase() === "income"
+                            ? "income"
+                            : "expense"
+                        }
+                        category={tx.Category || ""}
+                        amount={tx.Amount || 0}
+                        date={tx.Date || ""}
+                        onPress={() =>
+                          router.push(`/transactions/view?id=${tx.Id}`)
+                        }
+                      />
+                    ))}
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
       <TransactionInputMethodSelector
         visible={isInputMethodVisible}
         onClose={() => setIsInputMethodVisible(false)}
@@ -227,11 +276,20 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     display: "flex",
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "space-between",
     alignItems: "center",
     alignSelf: "stretch",
     marginTop: 52,
+    gap: 20,
+  },
+  summaryRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    alignSelf: "stretch",
+    width: "100%",
   },
   vl: {
     borderLeftWidth: 1,
@@ -274,7 +332,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 24,
     width: "100%",
-    height: "100%",
+    minHeight: "100%",
     flexShrink: 0,
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
@@ -356,5 +414,51 @@ const styles = StyleSheet.create({
     color: Colors.borderLight,
     textTransform: "uppercase",
     paddingBottom: 10,
+  },
+  errorContainer: {
+    padding: 20,
+    backgroundColor: Colors.errorLight,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: "center",
+  },
+  errorText: {
+    color: Colors.error,
+    fontFamily: "JakarthaRegular",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  loginButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: Colors.white,
+    fontFamily: "JakarthaBold",
+    fontSize: 16,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  emptyText: {
+    fontFamily: "JakarthaBold",
+    fontSize: 18,
+    color: Colors.text,
+    textAlign: "center",
+  },
+  emptySubtext: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 14,
+    color: Colors.fadedText,
+    textAlign: "center",
+    marginTop: 5,
+  },
+  scrollView: {
+    flex: 1,
   },
 });

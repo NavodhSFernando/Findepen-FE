@@ -1,8 +1,8 @@
 import { View, Text, StyleSheet } from "react-native";
-import ProgressBar from "@/components/ui/ProgressBar";
 import TotalBalance from "@/components/ui/TotalBalance";
 import { Colors } from "@/constants/Colors";
 import TotalExpenses from "@/components/ui/TotalExpenses";
+import TotalReserves from "@/components/ui/TotalReserves";
 import CircleButton from "@/components/ui/CircleButton";
 import Insight from "@/components/ui/Insight";
 import Transaction from "@/components/ui/Transaction";
@@ -11,6 +11,7 @@ import CircularProgress from "@/components/ui/CircularProgress";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
 import { useState } from "react";
+import useTransactions from "@/hooks/useTransactions";
 
 function getGreeting(): string {
   const currentHour = new Date().getHours();
@@ -24,12 +25,17 @@ function getGreeting(): string {
 export default function Overview() {
   const router = useRouter();
   const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
+  const { transactions, balance, expenses, reserves, loading, error } =
+    useTransactions();
 
   const handleInputMethodSelect = (method: "manual" | "scan" | "file") => {
     // Handle the selected input method
     console.log("Selected method:", method);
     // Add logic to navigate or handle the selected method
   };
+
+  // Get the latest 2 transactions
+  const latestTransactions = transactions.slice(0, 2);
 
   return (
     <ParallaxScrollView
@@ -53,11 +59,15 @@ export default function Overview() {
             </View>
           </View>
           <View style={styles.summaryContainer}>
-            <TotalBalance />
-            <View style={styles.vl} />
-            <TotalExpenses />
+            <View style={styles.summaryRow}>
+              <TotalBalance totalBalance={balance} />
+              <View style={styles.vl} />
+              <TotalExpenses totalExpenses={expenses} />
+            </View>
+            <View style={styles.summaryRow}>
+              <TotalReserves totalReserves={reserves} />
+            </View>
           </View>
-          <ProgressBar totalBudget={14000} totalExpenses={3000} />
         </View>
       }
     >
@@ -68,50 +78,57 @@ export default function Overview() {
             <Text style={styles.headerText}>Recent Transactions</Text>
             <Text
               style={styles.transactionLink}
-              onPress={() => router.push("/login")}
+              onPress={() => router.push("/(tabs)/transactions")}
             >
               See more
             </Text>
           </View>
           <View style={styles.transactionList}>
-            <Transaction
-              id={1}
-              title="Keells SuperMarket"
-              type="expense"
-              category="Food"
-              amount={1345}
-              date="2025-02-10"
-            />
-            <Transaction
-              id={2}
-              title="Allowance"
-              type="income"
-              category="Income"
-              amount={80000}
-              date="2025-02-11"
-            />
+            {loading ? (
+              <Text style={styles.loadingText}>Loading transactions...</Text>
+            ) : error ? (
+              <Text style={styles.errorText}>{error}</Text>
+            ) : latestTransactions.length === 0 ? (
+              <Text style={styles.noTransactionsText}>
+                No recent transactions
+              </Text>
+            ) : (
+              latestTransactions.map((transaction) => (
+                <Transaction
+                  key={transaction.Id}
+                  id={parseInt(transaction.Id)}
+                  title={transaction.Title}
+                  type={transaction.Type.toLowerCase() as "income" | "expense"}
+                  category={transaction.Category || "Other"}
+                  amount={transaction.Amount}
+                  date={transaction.Date}
+                />
+              ))
+            )}
           </View>
         </View>
-        <View style={[styles.summaryContainer, { marginBottom: 20 }]}>
-          <View>
-            <Text style={styles.headerText}>Budget</Text>
-            <CircularProgress
-              type="expense"
-              totalAmount={3000}
-              currentAmount={1345}
-              category="food"
-              title="Food"
-            />
-          </View>
-          <View>
-            <Text style={styles.headerText}>Goal</Text>
-            <CircularProgress
-              type="income"
-              totalAmount={5000}
-              currentAmount={2000}
-              category="income"
-              title="Savings"
-            />
+        <View style={styles.budgetGoalContainer}>
+          <View style={styles.budgetGoalRow}>
+            <View>
+              <Text style={styles.headerText}>Budget</Text>
+              <CircularProgress
+                type="expense"
+                totalAmount={3000}
+                currentAmount={1345}
+                category="food"
+                title="Food"
+              />
+            </View>
+            <View>
+              <Text style={styles.headerText}>Goal</Text>
+              <CircularProgress
+                type="income"
+                totalAmount={5000}
+                currentAmount={2000}
+                category="income"
+                title="Savings"
+              />
+            </View>
           </View>
         </View>
       </View>
@@ -136,10 +153,20 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+    alignSelf: "stretch",
+    marginTop: 52,
+    gap: 20,
+  },
+  summaryRow: {
+    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     alignSelf: "stretch",
+    width: "100%",
   },
   vl: {
     borderLeftWidth: 1,
@@ -213,6 +240,38 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     gap: 5,
+    width: "100%",
+  },
+  loadingText: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 12,
+    color: Colors.text,
+    textAlign: "center",
+    paddingVertical: 10,
+  },
+  errorText: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 12,
+    color: Colors.primary,
+    textAlign: "center",
+    paddingVertical: 10,
+  },
+  noTransactionsText: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 12,
+    color: Colors.neutral,
+    textAlign: "center",
+    paddingVertical: 10,
+  },
+  budgetGoalContainer: {
+    marginBottom: 20,
+  },
+  budgetGoalRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    alignSelf: "stretch",
     width: "100%",
   },
 });
