@@ -13,6 +13,7 @@ const Button: React.FC<ButtonProps> = ({
   title,
   variant = "primary",
   onPress,
+  disabled = false,
 }) => {
   return (
     <Pressable
@@ -20,8 +21,10 @@ const Button: React.FC<ButtonProps> = ({
         styles.button,
         styles[variant],
         pressed && styles.pressed,
+        disabled && styles.disabled,
       ]}
       onPress={onPress}
+      disabled={disabled}
     >
       <Text style={[styles.buttonText, styles[`${variant}Text`]]}>{title}</Text>
     </Pressable>
@@ -63,6 +66,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7, // Adds press effect
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });
 

@@ -8,6 +8,7 @@ import MenuItem from "@/components/ui/MenuItem";
 import * as SecureStore from "expo-secure-store";
 import * as ImagePicker from "expo-image-picker";
 import UploadModal from "@/components/ui/UploadModal";
+import useUser from "@/hooks/useUser";
 
 const More = () => {
   const router = useRouter();
@@ -15,6 +16,9 @@ const More = () => {
   const [image, setImage] = useState<{ uri: string } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Use the user hook to get real user data
+  const { profile, loading, error } = useUser();
 
   const handleLogout = async () => {
     await SecureStore.deleteItemAsync("authToken");
@@ -83,6 +87,24 @@ const More = () => {
     }
   };
 
+  // Show loading state while fetching user data
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <View style={{ flex: 1 }}>
@@ -94,8 +116,10 @@ const More = () => {
           headerImage={<View style={styles.headerContainer}></View>}
         >
           <View style={styles.bodyContainer}>
-            <Text style={styles.name}>John Smith</Text>
-            <Text style={styles.email}>jsmith@gmail.com</Text>
+            <Text style={styles.name}>{profile?.Name || "User"}</Text>
+            <Text style={styles.email}>
+              {profile?.Email || "user@example.com"}
+            </Text>
             <View style={styles.divider} />
             <MenuItem
               icon="user"
@@ -217,6 +241,30 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.borderLight,
     marginBottom: 30,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: "JakarthaRegular",
+    color: Colors.text,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: "JakarthaRegular",
+    color: "#FF3B30",
+    textAlign: "center",
   },
 });
 

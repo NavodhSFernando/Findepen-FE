@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import Icon from "react-native-vector-icons/FontAwesome";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Colors } from "@/constants/Colors";
 
 interface InputProps extends TextInputProps {
@@ -110,8 +110,8 @@ const InputField: React.FC<InputProps> = ({
                 type === "number"
                   ? "numeric"
                   : type === "email"
-                  ? "email-address"
-                  : "default"
+                    ? "email-address"
+                    : "default"
               }
               secureTextEntry={type === "password" && !isPasswordVisible}
               {...props}
@@ -122,7 +122,7 @@ const InputField: React.FC<InputProps> = ({
                 style={styles.iconButton}
               >
                 <Icon
-                  name={isPasswordVisible ? "eye" : "eye-slash"}
+                  name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
                   size={20}
                   color="#555"
                 />
