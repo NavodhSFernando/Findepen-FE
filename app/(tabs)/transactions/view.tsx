@@ -53,10 +53,6 @@ const TransactionViewPage: React.FC = () => {
     fetchTransaction();
   }, [id, router]);
 
-  const handleEdit = () => {
-    router.push(`/transactions/edit?id=${id}`);
-  };
-
   const handleDelete = async () => {
     Alert.alert(
       "Delete Transaction",
@@ -223,12 +219,6 @@ const TransactionViewPage: React.FC = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <Button
-            title="Edit"
-            onPress={handleEdit}
-            variant="primary"
-            disabled={deleting}
-          />
           <Button
             title={deleting ? "Deleting..." : "Delete"}
             onPress={handleDelete}

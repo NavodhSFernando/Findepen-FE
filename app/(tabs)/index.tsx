@@ -6,11 +6,11 @@ import TotalReserves from "@/components/ui/TotalReserves";
 import CircleButton from "@/components/ui/CircleButton";
 import Insight from "@/components/ui/Insight";
 import Transaction from "@/components/ui/Transaction";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import CircularProgress from "@/components/ui/CircularProgress";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import useTransactions from "@/hooks/useTransactions";
 
 function getGreeting(): string {
@@ -25,8 +25,26 @@ function getGreeting(): string {
 export default function Overview() {
   const router = useRouter();
   const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
-  const { transactions, balance, expenses, reserves, loading, error } =
-    useTransactions();
+  const {
+    transactions,
+    balance,
+    expenses,
+    reserves,
+    loading,
+    error,
+    fetchTransactions,
+    fetchBalance,
+    fetchReserves,
+  } = useTransactions();
+
+  // Refresh data when the page comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions();
+      fetchBalance();
+      fetchReserves();
+    }, [])
+  );
 
   const handleInputMethodSelect = (method: "manual" | "scan" | "file") => {
     // Handle the selected input method

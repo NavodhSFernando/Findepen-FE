@@ -24,6 +24,7 @@ interface ConvertToExpenseModalProps {
     transactionTitle: string;
     transactionDescription?: string;
     category: string;
+    markGoalAsCompleted: boolean;
   }) => Promise<boolean>;
 }
 
@@ -37,12 +38,17 @@ const ConvertToExpenseModal: React.FC<ConvertToExpenseModalProps> = ({
   const [transactionTitle, setTransactionTitle] = useState("");
   const [transactionDescription, setTransactionDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [amount, setAmount] = useState(0);
+  const [markGoalAsCompleted, setMarkGoalAsCompleted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (goal) {
       setTransactionTitle(goal.Title || "");
       setCategory(categories[0] || "");
+      setAmount(goal.CurrentAmount || 0);
+      // Default to marking as completed if goal is already completed
+      setMarkGoalAsCompleted(goal.CurrentAmount >= goal.TargetAmount);
     }
   }, [goal, categories]);
 
@@ -57,18 +63,32 @@ const ConvertToExpenseModal: React.FC<ConvertToExpenseModalProps> = ({
       Alert.alert("Validation Error", "Please select a category.");
       return;
     }
+    if (amount <= 0) {
+      Alert.alert("Validation Error", "Amount must be greater than 0.");
+      return;
+    }
+    if (amount > goal.CurrentAmount) {
+      Alert.alert(
+        "Validation Error",
+        "Amount cannot exceed the goal's current amount."
+      );
+      return;
+    }
     setLoading(true);
     try {
       const success = await onConvert({
-        amount: goal.CurrentAmount,
+        amount,
         transactionTitle: transactionTitle.trim(),
         transactionDescription: transactionDescription.trim() || undefined,
         category,
+        markGoalAsCompleted,
       });
       if (success) {
         setTransactionTitle("");
         setTransactionDescription("");
         setCategory(categories[0] || "");
+        setAmount(0);
+        setMarkGoalAsCompleted(false);
         onClose();
       }
     } catch (error) {
@@ -111,11 +131,44 @@ const ConvertToExpenseModal: React.FC<ConvertToExpenseModalProps> = ({
                 <Text style={styles.summaryValue}>{goal.Title}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Amount:</Text>
+                <Text style={styles.summaryLabel}>Available Amount:</Text>
                 <Text style={styles.summaryValue}>
                   Rs. {(goal.CurrentAmount ?? 0).toFixed(2)}
                 </Text>
               </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Target Amount:</Text>
+                <Text style={styles.summaryValue}>
+                  Rs. {(goal.TargetAmount ?? 0).toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Progress:</Text>
+                <Text style={styles.summaryValue}>
+                  {Math.min(
+                    ((goal.CurrentAmount ?? 0) / (goal.TargetAmount ?? 1)) *
+                      100,
+                    100
+                  ).toFixed(1)}
+                  %
+                </Text>
+              </View>
+            </View>
+
+            {/* Amount Input */}
+            <View style={styles.inputContainer}>
+              <Input
+                label="Amount to Convert"
+                placeholder="Enter amount to convert"
+                type="text"
+                value={amount.toString()}
+                onChangeText={(text) => setAmount(parseFloat(text) || 0)}
+                editable={!loading}
+                keyboardType="numeric"
+              />
+              <Text style={styles.helperText}>
+                Maximum: Rs. {(goal.CurrentAmount ?? 0).toFixed(2)}
+              </Text>
             </View>
 
             {/* Transaction Title */}
@@ -169,6 +222,33 @@ const ConvertToExpenseModal: React.FC<ConvertToExpenseModalProps> = ({
                 multiline
                 numberOfLines={3}
               />
+            </View>
+
+            {/* Goal Completion Toggle */}
+            <View style={styles.inputContainer}>
+              <View style={styles.toggleContainer}>
+                <Text style={styles.label}>Mark Goal as Completed</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    markGoalAsCompleted && styles.toggleButtonActive,
+                  ]}
+                  onPress={() => setMarkGoalAsCompleted(!markGoalAsCompleted)}
+                  disabled={loading}
+                >
+                  <View
+                    style={[
+                      styles.toggleThumb,
+                      markGoalAsCompleted && styles.toggleThumbActive,
+                    ]}
+                  />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.toggleDescription}>
+                {markGoalAsCompleted
+                  ? "Goal will be marked as completed after conversion"
+                  : "Goal will remain active after conversion"}
+              </Text>
             </View>
 
             {/* Action Buttons */}
@@ -336,5 +416,47 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  helperText: {
+    fontSize: 12,
+    color: Colors.borderLight,
+    fontFamily: "JakarthaRegular",
+    marginTop: 4,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  toggleButton: {
+    width: 50,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.borderLight,
+    padding: 2,
+    justifyContent: "center",
+  },
+  toggleButtonActive: {
+    backgroundColor: Colors.primary,
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.neutral,
+    shadowColor: Colors.text,
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleThumbActive: {
+    transform: [{ translateX: 22 }],
+  },
+  toggleDescription: {
+    fontSize: 12,
+    color: Colors.borderLight,
+    fontFamily: "JakarthaRegular",
+    fontStyle: "italic",
   },
 });

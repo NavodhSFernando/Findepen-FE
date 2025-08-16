@@ -59,16 +59,12 @@ export interface AddFundsData {
   note?: string;
 }
 
-export interface WithdrawFundsData {
-  amount: number;
-  note?: string;
-}
-
 export interface ConvertToExpenseData {
   amount: number;
   transactionTitle: string;
   transactionDescription?: string;
   category: string;
+  markGoalAsCompleted: boolean;
 }
 
 const useGoals = () => {
@@ -199,23 +195,6 @@ const useGoals = () => {
     }
   };
 
-  const withdrawFundsFromGoal = async (id: string, fundsData: WithdrawFundsData): Promise<Goal | null> => {
-    try {
-      setError(null);
-      const response = await api.post(`/goals/${id}/withdraw-funds`, fundsData);
-      await Promise.all([fetchGoals(), fetchSummary()]);
-      return response.data;
-    } catch (err: any) {
-      console.error('Error withdrawing funds from goal:', err);
-      if (err.response?.status === 401) {
-        setError('Please log in to withdraw funds from goals');
-      } else {
-        setError(err.response?.data?.message || 'Failed to withdraw funds from goal');
-      }
-      return null;
-    }
-  };
-
   const convertGoalToExpense = async (id: string, expenseData: ConvertToExpenseData): Promise<Goal | null> => {
     try {
       setError(null);
@@ -264,7 +243,6 @@ const useGoals = () => {
     deleteGoal,
     getGoalById,
     addFundsToGoal,
-    withdrawFundsFromGoal,
     convertGoalToExpense,
   };
 };
