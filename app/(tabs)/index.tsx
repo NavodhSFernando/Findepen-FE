@@ -12,6 +12,8 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
 import { useState, useCallback } from "react";
 import useTransactions from "@/hooks/useTransactions";
+import HistoricalDataChart from "@/components/ui/HistoricalDataChart";
+import { useHistoricalData } from "@/hooks/useHistoricalData";
 
 function getGreeting(): string {
   const currentHour = new Date().getHours();
@@ -37,12 +39,20 @@ export default function Overview() {
     fetchReserves,
   } = useTransactions();
 
+  const {
+    data: historicalData,
+    loading: chartLoading,
+    error: chartError,
+    refetch: refetchChart,
+  } = useHistoricalData(30); // Get last 30 days of data
+
   // Refresh data when the page comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchTransactions();
       fetchBalance();
       fetchReserves();
+      refetchChart();
     }, [])
   );
 
@@ -91,6 +101,15 @@ export default function Overview() {
     >
       <View style={styles.bodyContainer}>
         <Insight message="Your spending is on track!" />
+
+        {/* Historical Data Chart */}
+        <HistoricalDataChart
+          balanceHistory={historicalData?.balanceHistory || []}
+          reserveHistory={historicalData?.reserveHistory || []}
+          loading={chartLoading}
+          error={chartError}
+        />
+
         <View style={styles.recentTransactions}>
           <View style={styles.transactionHeader}>
             <Text style={styles.headerText}>Recent Transactions</Text>
