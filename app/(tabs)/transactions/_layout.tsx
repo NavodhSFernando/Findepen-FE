@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-export default function GoalLayout() {
+export default function TransactionLayout() {
   return (
     <Stack>
       <Stack.Screen
