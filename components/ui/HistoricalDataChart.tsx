@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, Text, StyleSheet, Dimensions, ScrollView } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
 
@@ -34,6 +34,8 @@ export default function HistoricalDataChart({
   loading = false,
   error = null,
 }: HistoricalDataChartProps) {
+  const scrollViewRef = useRef<ScrollView>(null);
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -58,13 +60,22 @@ export default function HistoricalDataChart({
     );
   }
 
-  // Combine and sort data by date
+  // Combine and sort data by date (most recent first)
   const allData = [...balanceHistory, ...reserveHistory].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  // Get unique dates
+  // Get unique dates (oldest first, so most recent appears on the right)
   const uniqueDates = [...new Set(allData.map((item) => item.date))].sort();
+
+  // Scroll to the end (most recent data) when component mounts
+  useEffect(() => {
+    if (scrollViewRef.current && uniqueDates.length > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: false });
+      }, 100);
+    }
+  }, [uniqueDates.length]);
 
   // Prepare chart data
   const balanceData = uniqueDates.map((date) => {
@@ -77,17 +88,12 @@ export default function HistoricalDataChart({
     return reserveItem ? reserveItem.reserveAmount : 0;
   });
 
-  // Format labels for x-axis (show only some dates to avoid crowding)
-  const labels = uniqueDates.map((date, index) => {
+  // Format labels for x-axis (show all dates for scrolling)
+  const labels = uniqueDates.map((date) => {
     const dateObj = new Date(date);
     const day = dateObj.getDate();
     const month = dateObj.toLocaleDateString("en-US", { month: "short" });
-
-    // Show label for every 3rd point or first/last
-    if (index === 0 || index === uniqueDates.length - 1 || index % 3 === 0) {
-      return `${month} ${day}`;
-    }
-    return "";
+    return `${month} ${day}`;
   });
 
   const chartData = {
@@ -95,13 +101,13 @@ export default function HistoricalDataChart({
     datasets: [
       {
         data: balanceData,
-        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // White line for balance
-        strokeWidth: 2,
+        color: () => `rgba(255, 255, 255, 1)`, // Solid white line for balance
+        strokeWidth: 4,
       },
       {
         data: reserveData,
-        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.7})`, // Slightly transparent white for reserve
-        strokeWidth: 2,
+        color: () => `rgba(255, 255, 255, 1)`, // Solid white line for reserve
+        strokeWidth: 4,
       },
     ],
   };
@@ -111,22 +117,35 @@ export default function HistoricalDataChart({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Financial Overview</Text>
-      <View style={styles.chartContainer}>
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
         <LineChart
           data={chartData}
-          width={screenWidth - 80}
-          height={220}
+          width={Math.max(screenWidth, uniqueDates.length * 80)} // Add spacing between data points
+          height={180}
           chartConfig={{
             backgroundColor: Colors.secondary,
             backgroundGradientFrom: Colors.secondary,
             backgroundGradientTo: Colors.secondary,
             decimalPlaces: 0,
             color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            labelColor: (opacity = 1) =>
-              `rgba(255, 255, 255, ${opacity * 0.7})`,
+            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
             style: {
-              borderRadius: 16,
+              borderRadius: 0,
+            },
+            propsForLabels: {
+              fontSize: 14,
+              fontFamily: "JakarthaRegular",
+            },
+            propsForBackgroundLines: {
+              strokeDasharray: "", // Remove background lines
+            },
+            propsForDots: {
+              r: "0", // Remove dots but keep spacing
             },
           }}
           bezier
@@ -137,38 +156,22 @@ export default function HistoricalDataChart({
           withOuterLines={false}
           withVerticalLines={false}
           withHorizontalLines={false}
+          withVerticalLabels={true}
+          withHorizontalLabels={false} // Keep x-axis labels visible
         />
-      </View>
-      <View style={styles.legend}>
-        <View style={styles.legendItem}>
-          <View
-            style={[
-              styles.legendDot,
-              { backgroundColor: "rgba(255, 255, 255, 1)" },
-            ]}
-          />
-          <Text style={styles.legendText}>Balance</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View
-            style={[
-              styles.legendDot,
-              { backgroundColor: "rgba(255, 255, 255, 0.7)" },
-            ]}
-          />
-          <Text style={styles.legendText}>Reserve</Text>
-        </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.secondary,
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 10,
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    padding: 0,
+    marginVertical: 0,
+    marginTop: 20,
+    width: "100%",
   },
   title: {
     fontFamily: "JakarthaBold",
@@ -181,9 +184,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  scrollContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   chart: {
-    marginVertical: 8,
-    borderRadius: 16,
+    marginVertical: 0,
+    borderRadius: 0,
   },
   legend: {
     flexDirection: "row",

@@ -96,19 +96,20 @@ export default function Overview() {
               <TotalReserves totalReserves={reserves} />
             </View>
           </View>
+          <View style={styles.chartContainer}>
+            {/* Historical Data Chart */}
+            <HistoricalDataChart
+              balanceHistory={historicalData?.balanceHistory || []}
+              reserveHistory={historicalData?.reserveHistory || []}
+              loading={chartLoading}
+              error={chartError}
+            />
+          </View>
         </View>
       }
     >
       <View style={styles.bodyContainer}>
         <Insight message="Your spending is on track!" />
-
-        {/* Historical Data Chart */}
-        <HistoricalDataChart
-          balanceHistory={historicalData?.balanceHistory || []}
-          reserveHistory={historicalData?.reserveHistory || []}
-          loading={chartLoading}
-          error={chartError}
-        />
 
         <View style={styles.recentTransactions}>
           <View style={styles.transactionHeader}>
@@ -186,7 +187,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
   },
   topContainer: {
-    padding: 40,
+    paddingTop: 40,
+    paddingBottom: 10,
   },
   summaryContainer: {
     display: "flex",
@@ -196,6 +198,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     marginTop: 52,
     gap: 20,
+    paddingHorizontal: 40,
   },
   summaryRow: {
     display: "flex",
@@ -216,6 +219,7 @@ const styles = StyleSheet.create({
     paddingBottom: 52,
     paddingTop: 30,
     width: "100%",
+    paddingHorizontal: 40,
   },
   headerTextContainer: {
     display: "flex",
@@ -239,6 +243,9 @@ const styles = StyleSheet.create({
     flexGrow: 0,
     height: 40,
     width: 40,
+  },
+  chartContainer: {
+    paddingBottom: 10,
   },
   bodyContainer: {
     display: "flex",
