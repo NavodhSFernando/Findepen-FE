@@ -16,12 +16,22 @@ import { Colors } from "@/constants/Colors";
 import CircleButton from "@/components/ui/CircleButton";
 import Title from "@/components/ui/Title";
 import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
+import { ReceiptScanner } from "@/components/ui/ReceiptScanner";
 import TotalBalance from "@/components/ui/TotalBalance";
 import TotalExpenses from "@/components/ui/TotalExpenses";
 import TotalReserves from "@/components/ui/TotalReserves";
 import Transaction from "@/components/ui/Transaction";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import useTransactions from "@/hooks/useTransactions";
+// Local interface for receipt processing
+interface TransactionData {
+  Title: string;
+  Description?: string;
+  Amount: string;
+  Category?: string;
+  Type: "Expense" | "Income";
+  Date: string;
+}
 
 // Transaction type for type safety
 interface TransactionType {
@@ -38,36 +48,27 @@ type GroupedTransactions = {
   [key: string]: TransactionType[];
 };
 
-const groupTransactionsByDate = (
-  transactions: TransactionType[]
-): { date: string; transactions: TransactionType[] }[] => {
+const groupTransactionsByDate = (transactions: TransactionType[]) => {
   const groups: GroupedTransactions = {};
-  transactions.forEach((tx: TransactionType) => {
-    const date = new Date(tx.Date);
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-    let group = date.toDateString();
-    if (date.toDateString() === today.toDateString()) group = "Today";
-    else if (date.toDateString() === yesterday.toDateString())
-      group = "Yesterday";
-    if (!groups[group]) groups[group] = [];
-    groups[group].push(tx);
+
+  transactions.forEach((transaction) => {
+    const date = transaction.Date;
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(transaction);
   });
-  // Sort groups: Today, Yesterday, then by date descending
-  const sortedKeys = Object.keys(groups).sort((a, b) => {
-    if (a === "Today") return -1;
-    if (b === "Today") return 1;
-    if (a === "Yesterday") return -1;
-    if (b === "Yesterday") return 1;
-    return new Date(b).getTime() - new Date(a).getTime();
-  });
+
+  const sortedKeys = Object.keys(groups).sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
+  );
   return sortedKeys.map((key) => ({ date: key, transactions: groups[key] }));
 };
 
 const TransactionsPage = () => {
   const router = useRouter();
   const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
+  const [isReceiptScannerVisible, setIsReceiptScannerVisible] = useState(false);
   const [search, setSearch] = useState("");
   const {
     transactions,
@@ -103,13 +104,23 @@ const TransactionsPage = () => {
     return groupTransactionsByDate(filtered);
   }, [transactions, search]);
 
-  const handleInputMethodSelect = (method: "manual" | "scan" | "file") => {
-    // Handle the selected input method
+  const handleInputMethodSelect = (method: "manual" | "scan") => {
     console.log("Selected method:", method);
     if (method === "manual") {
       router.push("/transactions/add");
+    } else if (method === "scan") {
+      setIsReceiptScannerVisible(true);
     }
-    // TODO: Add logic for scan and file methods
+  };
+
+  const handleReceiptProcessed = (transactionData: TransactionData) => {
+    // Navigate to add transaction page with pre-filled data
+    router.push({
+      pathname: "/transactions/add",
+      params: {
+        prefill: JSON.stringify(transactionData),
+      },
+    });
   };
 
   const onRefresh = () => {
@@ -258,6 +269,11 @@ const TransactionsPage = () => {
         visible={isInputMethodVisible}
         onClose={() => setIsInputMethodVisible(false)}
         onSelect={handleInputMethodSelect}
+      />
+      <ReceiptScanner
+        visible={isReceiptScannerVisible}
+        onClose={() => setIsReceiptScannerVisible(false)}
+        onReceiptProcessed={handleReceiptProcessed}
       />
     </ParallaxScrollView>
   );

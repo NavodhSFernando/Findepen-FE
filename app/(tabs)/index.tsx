@@ -10,10 +10,20 @@ import { useRouter, useFocusEffect } from "expo-router";
 import CircularProgress from "@/components/ui/CircularProgress";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
+import { ReceiptScanner } from "@/components/ui/ReceiptScanner";
 import { useState, useCallback } from "react";
 import useTransactions from "@/hooks/useTransactions";
 import HistoricalDataChart from "@/components/ui/HistoricalDataChart";
 import { useHistoricalData } from "@/hooks/useHistoricalData";
+// Local interface for receipt processing
+interface TransactionData {
+  Title: string;
+  Description?: string;
+  Amount: string;
+  Category?: string;
+  Type: "Expense" | "Income";
+  Date: string;
+}
 
 function getGreeting(): string {
   const currentHour = new Date().getHours();
@@ -27,6 +37,7 @@ function getGreeting(): string {
 export default function Overview() {
   const router = useRouter();
   const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
+  const [isReceiptScannerVisible, setIsReceiptScannerVisible] = useState(false);
   const {
     transactions,
     balance,
@@ -56,10 +67,23 @@ export default function Overview() {
     }, [])
   );
 
-  const handleInputMethodSelect = (method: "manual" | "scan" | "file") => {
-    // Handle the selected input method
+  const handleInputMethodSelect = (method: "manual" | "scan") => {
     console.log("Selected method:", method);
-    // Add logic to navigate or handle the selected method
+    if (method === "manual") {
+      router.push("/transactions/add");
+    } else if (method === "scan") {
+      setIsReceiptScannerVisible(true);
+    }
+  };
+
+  const handleReceiptProcessed = (transactionData: TransactionData) => {
+    // Navigate to add transaction page with pre-filled data
+    router.push({
+      pathname: "/transactions/add",
+      params: {
+        prefill: JSON.stringify(transactionData),
+      },
+    });
   };
 
   // Get the latest 2 transactions
@@ -175,6 +199,11 @@ export default function Overview() {
         visible={isInputMethodVisible}
         onClose={() => setIsInputMethodVisible(false)}
         onSelect={handleInputMethodSelect}
+      />
+      <ReceiptScanner
+        visible={isReceiptScannerVisible}
+        onClose={() => setIsReceiptScannerVisible(false)}
+        onReceiptProcessed={handleReceiptProcessed}
       />
     </ParallaxScrollView>
   );

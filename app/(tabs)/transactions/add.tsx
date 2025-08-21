@@ -1,16 +1,25 @@
 import { View, Text, StyleSheet, Alert } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Colors } from "@/constants/Colors";
 import Title from "@/components/ui/Title";
 import CircleButton from "@/components/ui/CircleButton";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import InputField from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Selector from "@/components/ui/Selector";
 import { useForm, Controller } from "react-hook-form";
 import useTransactions from "@/hooks/useTransactions";
 import useCategories from "@/hooks/useCategories";
+// Local interface for receipt processing
+interface TransactionData {
+  Title: string;
+  Description?: string;
+  Amount: string;
+  Category?: string;
+  Type: "Expense" | "Income";
+  Date: string;
+}
 
 interface TransactionForm {
   title: string;
@@ -23,6 +32,7 @@ interface TransactionForm {
 
 const AddTransactionPage: React.FC = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ prefill?: string }>();
   const { createTransaction } = useTransactions();
   const { categories, loading: categoriesLoading } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,6 +54,30 @@ const AddTransactionPage: React.FC = () => {
       date: new Date().toISOString().split("T")[0], // Today's date as default
     },
   });
+
+  // Handle pre-filled data from receipt scanning
+  useEffect(() => {
+    if (params.prefill) {
+      try {
+        const prefillData: TransactionData = JSON.parse(params.prefill);
+
+        // Set form values with pre-filled data
+        setValue("title", prefillData.Title || "");
+        setValue("description", prefillData.Description || "");
+        setValue("amount", prefillData.Amount || "");
+        setValue("category", prefillData.Category || "");
+        setValue("type", prefillData.Type || "Expense");
+        setValue(
+          "date",
+          prefillData.Date || new Date().toISOString().split("T")[0]
+        );
+
+        console.log("Pre-filled transaction data:", prefillData);
+      } catch (error) {
+        console.error("Error parsing prefill data:", error);
+      }
+    }
+  }, [params.prefill, setValue]);
 
   const selectedType = watch("type");
 

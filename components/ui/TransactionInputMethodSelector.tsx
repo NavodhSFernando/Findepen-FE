@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
-type InputMethod = "manual" | "scan" | "file";
+type InputMethod = "manual" | "scan";
 
 interface TransactionInputMethodSelectorProps {
   visible: boolean;
@@ -23,7 +23,6 @@ export const TransactionInputMethodSelector: React.FC<
   const methods: { id: InputMethod; label: string; icon: string }[] = [
     { id: "manual", label: "Manual Entry", icon: "text" },
     { id: "scan", label: "Scan Receipt", icon: "scan-helper" },
-    { id: "file", label: "Import File", icon: "file-outline" },
   ];
 
   return (
