@@ -66,9 +66,9 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
 
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: "images",
         allowsEditing: true,
-        aspect: [4, 3],
+        aspect: [9, 16],
         quality: 0.8,
         base64: true,
       });
@@ -291,6 +291,9 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <MaterialCommunityIcons name="close" size={24} color="#666" />
+          </TouchableOpacity>
           {isProcessing ? (
             <View style={styles.processingContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
@@ -345,12 +348,6 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                 <MaterialCommunityIcons name="camera" size={40} color="#fff" />
                 <Text style={styles.cameraButtonText}>Open Camera</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleClose}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -373,6 +370,14 @@ const styles = StyleSheet.create({
     width: "90%",
     maxWidth: 400,
     maxHeight: "80%",
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 15,
+    right: 15,
+    zIndex: 1,
+    padding: 5,
   },
   title: {
     fontSize: 20,
@@ -405,16 +410,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 10,
-  },
-  cancelButton: {
-    padding: 15,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  cancelText: {
-    fontSize: 16,
-    color: "#666",
   },
   confirmationContainer: {
     alignItems: "center",

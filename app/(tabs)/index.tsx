@@ -14,7 +14,7 @@ import { ReceiptScanner } from "@/components/ui/ReceiptScanner";
 import { useState, useCallback } from "react";
 import useTransactions from "@/hooks/useTransactions";
 import HistoricalDataChart from "@/components/ui/HistoricalDataChart";
-import { useHistoricalData } from "@/hooks/useHistoricalData";
+import useHistoricalData from "@/hooks/useHistoricalData";
 // Local interface for receipt processing
 interface TransactionData {
   Title: string;
@@ -123,8 +123,8 @@ export default function Overview() {
           <View style={styles.chartContainer}>
             {/* Historical Data Chart */}
             <HistoricalDataChart
-              balanceHistory={historicalData?.balanceHistory || []}
-              reserveHistory={historicalData?.reserveHistory || []}
+              balanceHistory={historicalData?.BalanceHistory || []}
+              reserveHistory={historicalData?.ReserveHistory || []}
               loading={chartLoading}
               error={chartError}
             />

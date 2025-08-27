@@ -1,23 +1,11 @@
-import React, { useRef, useEffect } from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Dimensions, ScrollView } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
-
-interface DailyBalanceSnapshot {
-  id: string;
-  userId: string;
-  date: string;
-  balanceAmount: number;
-  createdAt: string;
-}
-
-interface DailyReserveSnapshot {
-  id: string;
-  userId: string;
-  date: string;
-  reserveAmount: number;
-  createdAt: string;
-}
+import {
+  DailyBalanceSnapshot,
+  DailyReserveSnapshot,
+} from "@/hooks/useHistoricalData";
 
 interface HistoricalDataChartProps {
   balanceHistory: DailyBalanceSnapshot[];
@@ -26,20 +14,141 @@ interface HistoricalDataChartProps {
   error?: string | null;
 }
 
-const screenWidth = Dimensions.get("window").width;
-
-export default function HistoricalDataChart({
+const HistoricalDataChart: React.FC<HistoricalDataChartProps> = ({
   balanceHistory,
   reserveHistory,
   loading = false,
   error = null,
-}: HistoricalDataChartProps) {
-  const scrollViewRef = useRef<ScrollView>(null);
+}) => {
+  const screenWidth = Dimensions.get("window").width;
+  const scrollViewRef = React.useRef<ScrollView>(null);
+
+  // Transform data for chart
+  const getChartData = () => {
+    if (balanceHistory.length === 0 && reserveHistory.length === 0) {
+      return {
+        labels: [],
+        datasets: [
+          {
+            data: [],
+            color: (opacity = 1) => `rgba(19, 62, 135, ${opacity})`, // Primary color
+            strokeWidth: 2,
+          },
+          {
+            data: [],
+            color: (opacity = 1) => `rgba(172, 216, 255, ${opacity})`, // Secondary color
+            strokeWidth: 2,
+          },
+        ],
+        legend: ["Balance", "Reserve"],
+      };
+    }
+
+    // Create a map of dates to balance and reserve amounts
+    const dateMap = new Map<string, { balance: number; reserve: number }>();
+
+    // Add balance data
+    balanceHistory.forEach((snapshot) => {
+      const date = snapshot.Date.split("T")[0]; // Get just the date part
+      dateMap.set(date, {
+        balance: snapshot.BalanceAmount,
+        reserve: dateMap.get(date)?.reserve || 0,
+      });
+    });
+
+    // Add reserve data
+    reserveHistory.forEach((snapshot) => {
+      const date = snapshot.Date.split("T")[0]; // Get just the date part
+      const existing = dateMap.get(date) || { balance: 0, reserve: 0 };
+      dateMap.set(date, {
+        balance: existing.balance,
+        reserve: snapshot.ReserveAmount,
+      });
+    });
+
+    // Convert to array and sort by date
+    const chartData = Array.from(dateMap.entries())
+      .map(([date, amounts]) => ({
+        date,
+        balance: amounts.balance,
+        reserve: amounts.reserve,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return {
+      labels: chartData.map((point) => {
+        const date = new Date(point.date);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }),
+      datasets: [
+        {
+          data: chartData.map((point) => point.balance),
+          color: (opacity = 1) => `rgba(19, 62, 135, ${opacity})`, // Primary color
+          strokeWidth: 4, // Thicker stroke for better visibility
+        },
+        {
+          data: chartData.map((point) => point.reserve),
+          color: (opacity = 1) => `rgba(172, 216, 255, ${opacity})`, // Secondary color
+          strokeWidth: 4, // Thicker stroke for better visibility
+        },
+      ],
+      legend: ["Balance", "Reserve"],
+    };
+  };
+
+  const chartData = getChartData();
+
+  // Scroll to the end (most recent data) when chart data changes
+  useEffect(() => {
+    if (scrollViewRef.current && chartData.labels.length > 0) {
+      const chartWidth = Math.max(
+        screenWidth - 80,
+        chartData.labels.length * 60
+      );
+      const scrollToX = chartWidth - (screenWidth - 80);
+      scrollViewRef.current.scrollTo({ x: scrollToX, animated: false });
+    }
+  }, [chartData.labels.length, screenWidth]);
+
+  const chartConfig = {
+    backgroundGradientFrom: Colors.secondary,
+    backgroundGradientFromOpacity: 0.1,
+    backgroundGradientTo: Colors.secondary,
+    backgroundGradientToOpacity: 0.1,
+    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    strokeWidth: 4, // Increased stroke width for better visibility
+    barPercentage: 0.5,
+    useShadowColorFromDataset: false,
+    decimalPlaces: 0,
+    style: {
+      borderRadius: 16,
+    },
+    propsForDots: {
+      r: "5", // Slightly larger dots
+      strokeWidth: "3", // Thicker dot borders
+      stroke: Colors.primary,
+    },
+    propsForBackgroundLines: {
+      strokeDasharray: "", // Solid lines
+      stroke: Colors.borderLight,
+      strokeWidth: 0.5,
+    },
+    propsForLabels: {
+      fontSize: 10,
+      fontFamily: "JakarthaRegular",
+      color: Colors.text,
+    },
+  };
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading chart data...</Text>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>Financial Overview</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading chart data...</Text>
+        </View>
       </View>
     );
   }
@@ -47,140 +156,111 @@ export default function HistoricalDataChart({
   if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>Financial Overview</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
       </View>
     );
   }
 
-  if (!balanceHistory.length && !reserveHistory.length) {
+  if (chartData.labels.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.noDataText}>No historical data available</Text>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>Financial Overview</Text>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No historical data available</Text>
+        </View>
       </View>
     );
   }
-
-  // Combine and sort data by date (most recent first)
-  const allData = [...balanceHistory, ...reserveHistory].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
-  // Get unique dates (oldest first, so most recent appears on the right)
-  const uniqueDates = [...new Set(allData.map((item) => item.date))].sort();
-
-  // Scroll to the end (most recent data) when component mounts
-  useEffect(() => {
-    if (scrollViewRef.current && uniqueDates.length > 0) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: false });
-      }, 100);
-    }
-  }, [uniqueDates.length]);
-
-  // Prepare chart data
-  const balanceData = uniqueDates.map((date) => {
-    const balanceItem = balanceHistory.find((item) => item.date === date);
-    return balanceItem ? balanceItem.balanceAmount : 0;
-  });
-
-  const reserveData = uniqueDates.map((date) => {
-    const reserveItem = reserveHistory.find((item) => item.date === date);
-    return reserveItem ? reserveItem.reserveAmount : 0;
-  });
-
-  // Format labels for x-axis (show all dates for scrolling)
-  const labels = uniqueDates.map((date) => {
-    const dateObj = new Date(date);
-    const day = dateObj.getDate();
-    const month = dateObj.toLocaleDateString("en-US", { month: "short" });
-    return `${month} ${day}`;
-  });
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        data: balanceData,
-        color: () => `rgba(255, 255, 255, 1)`, // Solid white line for balance
-        strokeWidth: 4,
-      },
-      {
-        data: reserveData,
-        color: () => `rgba(255, 255, 255, 1)`, // Solid white line for reserve
-        strokeWidth: 4,
-      },
-    ],
-  };
-
-  const maxValue = Math.max(...balanceData, ...reserveData, 1);
-  const minValue = Math.min(...balanceData, ...reserveData, 0);
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-      >
-        <LineChart
-          data={chartData}
-          width={Math.max(screenWidth, uniqueDates.length * 80)} // Add spacing between data points
-          height={180}
-          chartConfig={{
-            backgroundColor: Colors.secondary,
-            backgroundGradientFrom: Colors.secondary,
-            backgroundGradientTo: Colors.secondary,
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            style: {
-              borderRadius: 0,
-            },
-            propsForLabels: {
-              fontSize: 14,
-              fontFamily: "JakarthaRegular",
-            },
-            propsForBackgroundLines: {
-              strokeDasharray: "", // Remove background lines
-            },
-            propsForDots: {
-              r: "0", // Remove dots but keep spacing
-            },
-          }}
-          bezier
-          style={styles.chart}
-          withDots={false}
-          withShadow={false}
-          withInnerLines={false}
-          withOuterLines={false}
-          withVerticalLines={false}
-          withHorizontalLines={false}
-          withVerticalLabels={true}
-          withHorizontalLabels={false} // Keep x-axis labels visible
-        />
-      </ScrollView>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerText}>Financial Overview</Text>
+      </View>
+      <View style={styles.chartWrapper}>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContainer}
+        >
+          <LineChart
+            data={chartData}
+            width={Math.max(screenWidth - 80, chartData.labels.length * 60)} // More space between data points
+            height={220}
+            chartConfig={chartConfig}
+            bezier
+            style={styles.chart}
+            withDots={true}
+            withShadow={false}
+            withInnerLines={false} // Remove inner grid lines
+            withOuterLines={false} // Remove outer grid lines
+            withVerticalLines={false}
+            withHorizontalLines={true}
+            withVerticalLabels={true}
+            withHorizontalLabels={false}
+            fromZero={false}
+            yAxisLabel="" // Remove y-axis label
+            yAxisSuffix="" // Remove y-axis suffix
+            yAxisInterval={0} // Hide y-axis
+            segments={0} // Remove segments
+          />
+        </ScrollView>
+      </View>
+      <View style={styles.legendContainer}>
+        <View style={styles.legendItem}>
+          <View
+            style={[styles.legendDot, { backgroundColor: Colors.primary }]}
+          />
+          <Text style={styles.legendText}>Balance</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View
+            style={[styles.legendDot, { backgroundColor: Colors.secondary }]}
+          />
+          <Text style={styles.legendText}>Reserve</Text>
+        </View>
+      </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "transparent",
-    borderRadius: 0,
-    padding: 0,
-    marginVertical: 0,
-    marginTop: 20,
-    width: "100%",
+    backgroundColor: Colors.neutral,
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: 20,
+    marginVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  title: {
+  headerContainer: {
+    marginBottom: 16,
+  },
+  headerText: {
     fontFamily: "JakarthaBold",
     fontSize: 16,
     color: Colors.text,
-    marginBottom: 15,
-    textAlign: "center",
   },
   chartContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chartWrapper: {
     alignItems: "center",
     justifyContent: "center",
   },
@@ -189,13 +269,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chart: {
-    marginVertical: 0,
-    borderRadius: 0,
+    marginVertical: 8,
+    borderRadius: 16,
   },
-  legend: {
+  legendContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 15,
+    marginTop: 16,
     gap: 20,
   },
   legendItem: {
@@ -213,25 +293,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text,
   },
+  loadingContainer: {
+    height: 220,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   loadingText: {
     fontFamily: "JakarthaRegular",
     fontSize: 14,
-    color: Colors.text,
-    textAlign: "center",
-    paddingVertical: 40,
+    color: Colors.fadedText,
+  },
+  errorContainer: {
+    height: 220,
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorText: {
     fontFamily: "JakarthaRegular",
     fontSize: 14,
-    color: Colors.primary,
+    color: Colors.error,
     textAlign: "center",
-    paddingVertical: 40,
   },
-  noDataText: {
+  emptyContainer: {
+    height: 220,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
     fontFamily: "JakarthaRegular",
     fontSize: 14,
-    color: Colors.neutral,
-    textAlign: "center",
-    paddingVertical: 40,
+    color: Colors.fadedText,
   },
 });
+
+export default HistoricalDataChart;
