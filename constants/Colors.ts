@@ -19,20 +19,27 @@ export const Colors = {
   success: '#4CD964',
   white: '#ffffff',
   errorLight: '#f8f9fa',
+  // Additional colors for recurring transactions
+  income: '#4CD964', // Map to success
+  expense: '#E74C3C', // Map to error
+  warning: '#FF9500', // Orange color for warnings
+  card: '#ffffff', // Map to neutral
+  shadow: '#000', // Shadow color
+  border: '#C5C5C5', // Map to borderLight
   light: {
     text: '#11181C',
     background: '#fff',
-    tint: tintColorLight,
+    tint: '#0a7ea4',
     icon: '#687076',
     tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    tabIconSelected: '#0a7ea4',
   },
   dark: {
     text: '#ECEDEE',
     background: '#151718',
-    tint: tintColorDark,
+    tint: '#fff',
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    tabIconSelected: '#fff',
   },
 };
