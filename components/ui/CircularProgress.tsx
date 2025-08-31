@@ -6,11 +6,15 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons"; // Ensure t
 import Title from "./Title";
 
 interface CircularProgressProps {
-  type: "income" | "expense";
+  type: "income" | "expense" | "goal";
   totalAmount: number;
   currentAmount: number;
-  category: string;
-  title: string;
+  category?: string;
+  title?: string;
+  size?: number;
+  thickness?: number;
+  showIcon?: boolean;
+  showTitle?: boolean;
 }
 
 const getIconName = (category: string): string => {
@@ -45,6 +49,10 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
   currentAmount,
   category,
   title,
+  size = 80,
+  thickness = 5,
+  showIcon = true,
+  showTitle = true,
 }) => {
   const progress = calculateProgress(currentAmount, totalAmount);
   return (
@@ -59,20 +67,22 @@ const CircularProgress: React.FC<CircularProgressProps> = ({
     >
       <View style={styles.progressContainer}>
         <Progress.Circle
-          size={80}
+          size={size}
           progress={progress}
           color={Colors.primary}
           unfilledColor={Colors.secondary}
           borderWidth={0}
           strokeCap="round"
-          thickness={5}
+          thickness={thickness}
         />
         {/* Centered Icon */}
-        <View style={styles.iconContainer}>
-          <Icon name={getIconName(category)} size={28} color={Colors.text} />
-        </View>
+        {showIcon && category && (
+          <View style={styles.iconContainer}>
+            <Icon name={getIconName(category)} size={28} color={Colors.text} />
+          </View>
+        )}
       </View>
-      <Text style={styles.description}>{title}</Text>
+      {showTitle && title && <Text style={styles.description}>{title}</Text>}
     </View>
   );
 };

@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useState } from "react";
 import { useRouter } from "expo-router";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
@@ -20,6 +21,7 @@ import { useFocusEffect } from "expo-router";
 import { Goal } from "@/hooks/useGoals";
 import useTransactions from "@/hooks/useTransactions";
 import ConvertToExpenseModal from "@/components/ui/ConvertToExpenseModal";
+import GoalSummaryModal from "@/components/ui/GoalSummaryModal";
 import useCategories from "@/hooks/useCategories";
 
 const index = () => {
@@ -44,6 +46,7 @@ const index = () => {
   const [addFundsModalVisible, setAddFundsModalVisible] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [convertModalVisible, setConvertModalVisible] = useState(false);
+  const [goalSummaryModalVisible, setGoalSummaryModalVisible] = useState(false);
 
   // Categories for expense
   const { categories } = useCategories();
@@ -237,47 +240,33 @@ const index = () => {
           )}
 
           {summary && summary.TotalGoals > 0 && (
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryTitle}>Goal Summary</Text>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Total Goals:</Text>
-                <Text style={styles.summaryValue}>{summary.TotalGoals}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Active Goals:</Text>
-                <Text style={styles.summaryValue}>{summary.ActiveGoals}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Completed Goals:</Text>
-                <Text style={styles.summaryValue}>
-                  {summary.CompletedGoals}
+            <TouchableOpacity
+              onPress={() => setGoalSummaryModalVisible(true)}
+              activeOpacity={0.9}
+              style={styles.motivationalCardContainer}
+            >
+              <LinearGradient
+                colors={[Colors.secondary, Colors.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.motivationalCard}
+              >
+                <Text style={styles.motivationalTitle}>Keep Going!</Text>
+                <Text style={styles.motivationalDescription}>
+                  Only{" "}
+                  <Text style={{ fontFamily: "JakarthaBold" }}>
+                    Rs.{(summary.TotalRemainingAmount || 0).toFixed(0)}
+                  </Text>{" "}
+                  left to achieve your goal
                 </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Target Amount:</Text>
-                <Text style={styles.summaryValue}>
-                  Rs. {(summary.TotalTargetAmount || 0).toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Current Amount:</Text>
-                <Text style={styles.summaryValue}>
-                  Rs. {(summary.TotalCurrentAmount || 0).toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Remaining:</Text>
-                <Text style={styles.summaryValue}>
-                  Rs. {(summary.TotalRemainingAmount || 0).toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Progress:</Text>
-                <Text style={styles.summaryValue}>
-                  {(summary.OverallProgressPercentage || 0).toFixed(1)}%
-                </Text>
-              </View>
-            </View>
+                <View style={styles.progressBadge}>
+                  <Text style={styles.progressBadgeText}>
+                    You're {(summary.OverallProgressPercentage || 0).toFixed(1)}
+                    % there!
+                  </Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
           )}
 
           {goals.length > 0 && (
@@ -322,6 +311,13 @@ const index = () => {
         goal={selectedGoal}
         categories={categories}
         onConvert={handleConvertToExpense}
+      />
+
+      {/* Goal Summary Modal */}
+      <GoalSummaryModal
+        visible={goalSummaryModalVisible}
+        onClose={() => setGoalSummaryModalVisible(false)}
+        summary={summary}
       />
     </ParallaxScrollView>
   );
@@ -442,5 +438,49 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 65,
     right: 40,
+  },
+  motivationalCardContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  motivationalCard: {
+    padding: 25,
+    width: "100%",
+    alignItems: "center",
+    borderRadius: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  motivationalTitle: {
+    fontSize: 18,
+    fontFamily: "JakarthaBold",
+    color: Colors.neutral,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  motivationalDescription: {
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
+    color: Colors.neutral,
+    textAlign: "center",
+    marginBottom: 20,
+    opacity: 0.95,
+  },
+  progressBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  progressBadgeText: {
+    fontSize: 12,
+    fontFamily: "JakarthaBold",
+    color: Colors.neutral,
+    textAlign: "center",
   },
 });

@@ -2,12 +2,22 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { logout } = useAuth();
 
   const handleNext = () => {
     router.push("/budgeting");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   return (
@@ -34,6 +44,10 @@ export default function WelcomeScreen() {
         <View style={styles.footer}>
           <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
             <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -96,6 +110,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: "center",
+    gap: 16,
   },
   nextButton: {
     backgroundColor: Colors.primary,
@@ -106,6 +121,21 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     color: Colors.white,
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  logoutButton: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    borderRadius: 12,
+    minWidth: 200,
+    borderWidth: 1,
+    borderColor: Colors.fadedText,
+  },
+  logoutButtonText: {
+    color: Colors.fadedText,
     fontSize: 18,
     fontWeight: "600",
     textAlign: "center",

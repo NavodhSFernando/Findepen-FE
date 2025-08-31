@@ -8,20 +8,20 @@ const tintColorDark = '#fff';
 
 export const Colors = {
   primary: '#133E87',
-  secondary: '#ACD8FF',
-  background: '#EEEEDD',
+  secondary: '#5c94f7',
+  background: '#f7f7f7',
   text: '#000000',
   neutral: '#ffffff',
-  borderLight: '#C5C5C5',
+  borderLight: '#AAAAAA',
   fadedPrimary: "#4c648c",
   fadedText: '#7a7979',
-  error: '#E74C3C',
+  error: '#EF4444', // Updated to match image red color
   success: '#4CD964',
   white: '#ffffff',
-  errorLight: '#f8f9fa',
+  errorLight: '#F6EDC2',
   // Additional colors for recurring transactions
   income: '#4CD964', // Map to success
-  expense: '#E74C3C', // Map to error
+  expense: '#EF4444', // Updated to match image red color
   warning: '#FF9500', // Orange color for warnings
   card: '#ffffff', // Map to neutral
   shadow: '#000', // Shadow color

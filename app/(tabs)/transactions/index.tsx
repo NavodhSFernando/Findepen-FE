@@ -45,24 +45,45 @@ interface TransactionType {
 }
 
 type GroupedTransactions = {
-  [key: string]: TransactionType[];
+  date: string;
+  transactions: TransactionType[];
 };
 
 const groupTransactionsByDate = (transactions: TransactionType[]) => {
-  const groups: GroupedTransactions = {};
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const groups: {
+    today: TransactionType[];
+    yesterday: TransactionType[];
+    past: TransactionType[];
+  } = {
+    today: [],
+    yesterday: [],
+    past: [],
+  };
 
   transactions.forEach((transaction) => {
-    const date = transaction.Date;
-    if (!groups[date]) {
-      groups[date] = [];
+    const transactionDate = new Date(transaction.Date);
+    const isToday = transactionDate.toDateString() === today.toDateString();
+    const isYesterday =
+      transactionDate.toDateString() === yesterday.toDateString();
+
+    if (isToday) {
+      groups.today.push(transaction);
+    } else if (isYesterday) {
+      groups.yesterday.push(transaction);
+    } else {
+      groups.past.push(transaction);
     }
-    groups[date].push(transaction);
   });
 
-  const sortedKeys = Object.keys(groups).sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime()
-  );
-  return sortedKeys.map((key) => ({ date: key, transactions: groups[key] }));
+  return [
+    { date: "Today", transactions: groups.today },
+    { date: "Yesterday", transactions: groups.yesterday },
+    { date: "Past Transactions", transactions: groups.past },
+  ].filter((group) => group.transactions.length > 0);
 };
 
 const TransactionsPage = () => {
@@ -151,12 +172,12 @@ const TransactionsPage = () => {
           </View>
           <View style={styles.summaryContainer}>
             <View style={styles.summaryRow}>
-              <TotalBalance totalBalance={balance} />
-              <View style={styles.vl} />
-              <TotalExpenses totalExpenses={expenses} />
-            </View>
-            <View style={styles.summaryRow}>
-              <TotalReserves totalReserves={reserves} />
+              <View style={styles.summaryCard}>
+                <TotalBalance totalBalance={balance} />
+              </View>
+              <View style={styles.summaryCard}>
+                <TotalReserves totalReserves={reserves} />
+              </View>
             </View>
           </View>
         </View>
@@ -288,7 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
   },
   topContainer: {
-    padding: 40,
+    padding: 20,
   },
   summaryContainer: {
     display: "flex",
@@ -306,11 +327,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "stretch",
     width: "100%",
+    gap: 20,
+    paddingBottom: 10,
   },
-  vl: {
-    borderLeftWidth: 1,
-    borderLeftColor: Colors.neutral,
-    height: 34,
+  summaryCard: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: Colors.background,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   headerContainer: {
     display: "flex",
@@ -355,7 +388,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     backgroundColor: Colors.background,
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
   },
   recentTransactions: {
     display: "flex",
@@ -386,6 +419,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     marginTop: 18,
+    paddingHorizontal: 10,
   },
   searchBarContainer: {
     flex: 1,

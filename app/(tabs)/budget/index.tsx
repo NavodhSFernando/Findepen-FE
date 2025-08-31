@@ -7,7 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import BudgetProgressCard from "@/components/ui/BudgetProgressCard";
 import { Colors } from "@/constants/Colors";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
@@ -16,6 +16,8 @@ import { useRouter } from "expo-router";
 import CircleButton from "@/components/ui/CircleButton";
 import useBudgets from "@/hooks/useBudgets";
 import { useFocusEffect } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import BudgetSummaryModal from "@/components/ui/BudgetSummaryModal";
 
 const Index = () => {
   const {
@@ -30,6 +32,10 @@ const Index = () => {
     toggleAutoRenewal,
   } = useBudgets();
   const router = useRouter();
+
+  // Modal state
+  const [budgetSummaryModalVisible, setBudgetSummaryModalVisible] =
+    useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,37 +137,32 @@ const Index = () => {
           )}
 
           {summary && summary.TotalBudgets > 0 && (
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryTitle}>Budget Summary</Text>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Total Budgets:</Text>
-                <Text style={styles.summaryValue}>{summary.TotalBudgets}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Total Planned:</Text>
-                <Text style={styles.summaryValue}>
-                  Rs. {(summary.TotalPlannedAmount || 0).toFixed(2)}
+            <TouchableOpacity
+              onPress={() => setBudgetSummaryModalVisible(true)}
+              activeOpacity={0.9}
+              style={styles.motivationalCardContainer}
+            >
+              <LinearGradient
+                colors={[Colors.secondary, Colors.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.motivationalCard}
+              >
+                <Text style={styles.motivationalTitle}>Stay on Track!</Text>
+                <Text style={styles.motivationalDescription}>
+                  You've spent{" "}
+                  <Text style={{ fontFamily: "JakarthaBold" }}>
+                    Rs.{(summary.TotalSpentAmount || 0).toFixed(0)}
+                  </Text>{" "}
+                  of your budget
                 </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Total Spent:</Text>
-                <Text style={styles.summaryValue}>
-                  Rs. {(summary.TotalSpentAmount || 0).toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Remaining:</Text>
-                <Text style={styles.summaryValue}>
-                  Rs. {(summary.TotalRemainingAmount || 0).toFixed(2)}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Progress:</Text>
-                <Text style={styles.summaryValue}>
-                  {(summary.OverallProgressPercentage || 0).toFixed(1)}%
-                </Text>
-              </View>
-            </View>
+                <View style={styles.progressBadge}>
+                  <Text style={styles.progressBadgeText}>
+                    {(summary.OverallProgressPercentage || 0).toFixed(1)}% used
+                  </Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
           )}
 
           {budgets.length > 0 && (
@@ -199,6 +200,13 @@ const Index = () => {
           )}
         </View>
       </ScrollView>
+
+      {/* Budget Summary Modal */}
+      <BudgetSummaryModal
+        visible={budgetSummaryModalVisible}
+        onClose={() => setBudgetSummaryModalVisible(false)}
+        summary={summary}
+      />
     </ParallaxScrollView>
   );
 };
@@ -238,6 +246,50 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 65,
     right: 40,
+  },
+  motivationalCardContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  motivationalCard: {
+    padding: 25,
+    width: "100%",
+    alignItems: "center",
+    borderRadius: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  motivationalTitle: {
+    fontSize: 18,
+    fontFamily: "JakarthaBold",
+    color: Colors.neutral,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  motivationalDescription: {
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
+    color: Colors.neutral,
+    textAlign: "center",
+    marginBottom: 20,
+    opacity: 0.95,
+  },
+  progressBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  progressBadgeText: {
+    fontSize: 12,
+    fontFamily: "JakarthaBold",
+    color: Colors.neutral,
+    textAlign: "center",
   },
   errorContainer: {
     backgroundColor: Colors.errorLight,

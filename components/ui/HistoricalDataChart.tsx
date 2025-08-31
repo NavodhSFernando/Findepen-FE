@@ -1,5 +1,12 @@
-import React, { useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
 import {
@@ -14,6 +21,8 @@ interface HistoricalDataChartProps {
   error?: string | null;
 }
 
+type ChartType = "balance" | "reserve";
+
 const HistoricalDataChart: React.FC<HistoricalDataChartProps> = ({
   balanceHistory,
   reserveHistory,
@@ -22,101 +31,118 @@ const HistoricalDataChart: React.FC<HistoricalDataChartProps> = ({
 }) => {
   const screenWidth = Dimensions.get("window").width;
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const [selectedTab, setSelectedTab] = useState<ChartType>("balance");
 
   // Transform data for chart
-  const getChartData = () => {
-    if (balanceHistory.length === 0 && reserveHistory.length === 0) {
+  const getChartData = (type: ChartType) => {
+    const history = type === "balance" ? balanceHistory : reserveHistory;
+
+    if (history.length === 0) {
       return {
         labels: [],
         datasets: [
           {
             data: [],
-            color: (opacity = 1) => `rgba(19, 62, 135, ${opacity})`, // Primary color
-            strokeWidth: 2,
-          },
-          {
-            data: [],
-            color: (opacity = 1) => `rgba(172, 216, 255, ${opacity})`, // Secondary color
+            color: (opacity = 1) => `rgba(19, 62, 135, ${opacity})`,
             strokeWidth: 2,
           },
         ],
-        legend: ["Balance", "Reserve"],
       };
     }
 
-    // Create a map of dates to balance and reserve amounts
-    const dateMap = new Map<string, { balance: number; reserve: number }>();
+    // Sort by date
+    const sortedData = history
+      .map((snapshot) => {
+        const date = snapshot.Date.split("T")[0];
+        let value: number;
 
-    // Add balance data
-    balanceHistory.forEach((snapshot) => {
-      const date = snapshot.Date.split("T")[0]; // Get just the date part
-      dateMap.set(date, {
-        balance: snapshot.BalanceAmount,
-        reserve: dateMap.get(date)?.reserve || 0,
-      });
-    });
+        if (type === "balance") {
+          value = (snapshot as DailyBalanceSnapshot).BalanceAmount;
+        } else {
+          value = (snapshot as DailyReserveSnapshot).ReserveAmount;
+        }
 
-    // Add reserve data
-    reserveHistory.forEach((snapshot) => {
-      const date = snapshot.Date.split("T")[0]; // Get just the date part
-      const existing = dateMap.get(date) || { balance: 0, reserve: 0 };
-      dateMap.set(date, {
-        balance: existing.balance,
-        reserve: snapshot.ReserveAmount,
-      });
-    });
-
-    // Convert to array and sort by date
-    const chartData = Array.from(dateMap.entries())
-      .map(([date, amounts]) => ({
-        date,
-        balance: amounts.balance,
-        reserve: amounts.reserve,
-      }))
+        return { date, value };
+      })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return {
-      labels: chartData.map((point) => {
+      labels: sortedData.map((point) => {
         const date = new Date(point.date);
         return `${date.getMonth() + 1}/${date.getDate()}`;
       }),
       datasets: [
         {
-          data: chartData.map((point) => point.balance),
-          color: (opacity = 1) => `rgba(19, 62, 135, ${opacity})`, // Primary color
-          strokeWidth: 4, // Thicker stroke for better visibility
-        },
-        {
-          data: chartData.map((point) => point.reserve),
-          color: (opacity = 1) => `rgba(172, 216, 255, ${opacity})`, // Secondary color
-          strokeWidth: 4, // Thicker stroke for better visibility
+          data: sortedData.map((point) => point.value),
+          color: (opacity = 1) => `rgba(19, 62, 135, ${opacity})`,
+          strokeWidth: 3,
         },
       ],
-      legend: ["Balance", "Reserve"],
     };
   };
 
-  const chartData = getChartData();
+  const chartData = getChartData(selectedTab);
+
+  // Calculate value range for Y-axis
+  const getValueRange = () => {
+    const history = selectedTab === "balance" ? balanceHistory : reserveHistory;
+    if (history.length === 0) return { min: 0, max: 1000 };
+
+    const values = history.map((snapshot) => {
+      if (selectedTab === "balance") {
+        return (snapshot as DailyBalanceSnapshot).BalanceAmount;
+      } else {
+        return (snapshot as DailyReserveSnapshot).ReserveAmount;
+      }
+    });
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+
+    return {
+      min: Math.max(0, min - range * 0.1),
+      max: max + range * 0.1,
+    };
+  };
+
+  const valueRange = getValueRange();
+
+  // Generate Y-axis labels
+  const generateYAxisLabels = () => {
+    const { min, max } = valueRange;
+    const step = (max - min) / 4;
+    const labels = [];
+
+    // Generate labels from bottom (min) to top (max)
+    for (let i = 4; i >= 0; i--) {
+      const value = min + step * i;
+      labels.push(Math.round(value).toString());
+    }
+
+    return labels;
+  };
+
+  const yAxisLabels = generateYAxisLabels();
 
   // Scroll to the end (most recent data) when chart data changes
   useEffect(() => {
     if (scrollViewRef.current && chartData.labels.length > 0) {
       const chartWidth = Math.max(
-        screenWidth - 80,
+        screenWidth - 140, // Account for dynamic Y-axis space
         chartData.labels.length * 60
       );
-      const scrollToX = chartWidth - (screenWidth - 80);
+      const scrollToX = chartWidth - (screenWidth - 140);
       scrollViewRef.current.scrollTo({ x: scrollToX, animated: false });
     }
-  }, [chartData.labels.length, screenWidth]);
+  }, [chartData.labels.length, screenWidth, selectedTab]);
 
   const chartConfig = {
-    backgroundGradientFrom: Colors.secondary,
-    backgroundGradientFromOpacity: 0.1,
-    backgroundGradientTo: Colors.secondary,
-    backgroundGradientToOpacity: 0.1,
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    strokeWidth: 4, // Increased stroke width for better visibility
+    backgroundGradientFrom: Colors.background,
+    backgroundGradientFromOpacity: 0,
+    backgroundGradientTo: Colors.background,
+    backgroundGradientToOpacity: 0,
+    color: (opacity = 1) => `rgba(19, 62, 135, ${opacity})`,
+    strokeWidth: 3,
     barPercentage: 0.5,
     useShadowColorFromDataset: false,
     decimalPlaces: 0,
@@ -124,12 +150,13 @@ const HistoricalDataChart: React.FC<HistoricalDataChartProps> = ({
       borderRadius: 16,
     },
     propsForDots: {
-      r: "5", // Slightly larger dots
-      strokeWidth: "3", // Thicker dot borders
+      r: "4",
+      strokeWidth: "2",
       stroke: Colors.primary,
+      fill: Colors.primary,
     },
     propsForBackgroundLines: {
-      strokeDasharray: "", // Solid lines
+      strokeDasharray: "",
       stroke: Colors.borderLight,
       strokeWidth: 0.5,
     },
@@ -184,48 +211,84 @@ const HistoricalDataChart: React.FC<HistoricalDataChartProps> = ({
       <View style={styles.headerContainer}>
         <Text style={styles.headerText}>Financial Overview</Text>
       </View>
-      <View style={styles.chartWrapper}>
-        <ScrollView
-          ref={scrollViewRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContainer}
+
+      {/* Tab Buttons */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            selectedTab === "balance" && styles.activeTabButton,
+          ]}
+          onPress={() => setSelectedTab("balance")}
         >
-          <LineChart
-            data={chartData}
-            width={Math.max(screenWidth - 80, chartData.labels.length * 60)} // More space between data points
-            height={220}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.chart}
-            withDots={true}
-            withShadow={false}
-            withInnerLines={false} // Remove inner grid lines
-            withOuterLines={false} // Remove outer grid lines
-            withVerticalLines={false}
-            withHorizontalLines={true}
-            withVerticalLabels={true}
-            withHorizontalLabels={false}
-            fromZero={false}
-            yAxisLabel="" // Remove y-axis label
-            yAxisSuffix="" // Remove y-axis suffix
-            yAxisInterval={0} // Hide y-axis
-            segments={0} // Remove segments
-          />
-        </ScrollView>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "balance" && styles.activeTabText,
+            ]}
+          >
+            Balance
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            selectedTab === "reserve" && styles.activeTabButton,
+          ]}
+          onPress={() => setSelectedTab("reserve")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "reserve" && styles.activeTabText,
+            ]}
+          >
+            Reserves
+          </Text>
+        </TouchableOpacity>
       </View>
-      <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View
-            style={[styles.legendDot, { backgroundColor: Colors.primary }]}
-          />
-          <Text style={styles.legendText}>Balance</Text>
+
+      {/* Chart with Y-axis */}
+      <View style={styles.chartContainer}>
+        {/* Y-axis Labels */}
+        <View style={styles.yAxisContainer}>
+          {yAxisLabels.map((label, index) => (
+            <Text key={index} style={styles.yAxisLabel}>
+              {label}
+            </Text>
+          ))}
         </View>
-        <View style={styles.legendItem}>
-          <View
-            style={[styles.legendDot, { backgroundColor: Colors.secondary }]}
-          />
-          <Text style={styles.legendText}>Reserve</Text>
+
+        {/* Chart */}
+        <View style={styles.chartWrapper}>
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContainer}
+          >
+            <LineChart
+              data={chartData}
+              width={Math.max(screenWidth - 140, chartData.labels.length * 60)}
+              height={200}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.chart}
+              withDots={true}
+              withShadow={false}
+              withInnerLines={false}
+              withOuterLines={false}
+              withVerticalLines={false}
+              withHorizontalLines={true}
+              withVerticalLabels={true}
+              withHorizontalLabels={false}
+              fromZero={false}
+              yAxisLabel=""
+              yAxisSuffix=""
+              yAxisInterval={0}
+              segments={4}
+            />
+          </ScrollView>
         </View>
       </View>
     </View>
@@ -234,10 +297,9 @@ const HistoricalDataChart: React.FC<HistoricalDataChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.neutral,
+    backgroundColor: Colors.background,
     borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 20,
+    padding: 20,
     marginVertical: 10,
     shadowColor: "#000",
     shadowOffset: {
@@ -256,11 +318,52 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
   },
-  chartContainer: {
+  tabContainer: {
+    flexDirection: "row",
+    marginBottom: 20,
+    backgroundColor: Colors.neutral,
+    borderRadius: 8,
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
     alignItems: "center",
-    justifyContent: "center",
+  },
+  activeTabButton: {
+    backgroundColor: Colors.primary,
+  },
+  tabText: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 14,
+    color: Colors.text,
+  },
+  activeTabText: {
+    fontFamily: "JakarthaBold",
+    color: Colors.background,
+  },
+  chartContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingBottom: 10, // Add padding to ensure proper spacing
+  },
+  yAxisContainer: {
+    minWidth: 40,
+    height: 200,
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingRight: 8,
+    paddingBottom: 40, // Increased padding to avoid X-axis crossover
+  },
+  yAxisLabel: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 10,
+    color: Colors.text,
   },
   chartWrapper: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -271,27 +374,6 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
-  },
-  legendContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 16,
-    gap: 20,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  legendText: {
-    fontFamily: "JakarthaRegular",
-    fontSize: 12,
-    color: Colors.text,
   },
   loadingContainer: {
     height: 220,

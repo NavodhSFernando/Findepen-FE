@@ -50,13 +50,6 @@ const LoginPage: React.FC = () => {
         // Use the auth context to handle login
         await login(token);
 
-        // Check if balance is -1 and route to /welcome instead
-        const user = response.data.User;
-        if (user && user.Balance === -1) {
-          router.push("/welcome");
-          return;
-        }
-
         // Navigate to main app
         router.push("/");
       } else {

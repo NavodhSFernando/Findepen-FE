@@ -220,9 +220,9 @@ const TransactionViewPage: React.FC = () => {
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
           <Button
-            title={deleting ? "Deleting..." : "Delete"}
+            title={deleting ? "Reversing..." : "Reverse"}
             onPress={handleDelete}
-            variant="secondary"
+            variant="danger"
             disabled={deleting}
           />
         </View>

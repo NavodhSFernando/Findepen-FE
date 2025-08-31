@@ -25,7 +25,7 @@ const CircleButton: React.FC<CircleButtonProps> = ({
       ]}
       onPress={onPress}
     >
-      <Ionicons name={icon} size={size * 0.5} color={Colors.text} />
+      <Ionicons name={icon} size={size * 0.6} color={Colors.text} />
     </TouchableOpacity>
   );
 };
@@ -34,14 +34,14 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#8EC0EC",
+    shadowColor: Colors.primary,
     shadowOffset: {
-      width: 0,
-      height: 4,
+      width: 4,
+      height: 8,
     },
     shadowOpacity: 1,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 16,
   },
 });
 

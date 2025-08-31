@@ -55,11 +55,11 @@ const styles = StyleSheet.create({
   headerText: {
     color: Colors.text,
     fontFamily: "JakarthaRegular",
-    fontSize: 12,
+    fontSize: 14,
   },
   amount: {
     color: Colors.text,
     fontFamily: "JakarthaBold",
-    fontSize: 16,
+    fontSize: 18,
   },
 });

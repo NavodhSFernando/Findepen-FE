@@ -26,6 +26,10 @@ const styles = StyleSheet.create({
     fontFamily: "JakarthaBold",
     paddingTop: 30,
     textAlign: "center",
-    color: Colors.text,
+    color: Colors.neutral,
+    textShadowColor: Colors.text,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 4,
+    shadowOpacity: 1,
   },
 });

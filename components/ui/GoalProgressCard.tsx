@@ -77,6 +77,95 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     }
   };
 
+  const getActionButtonStyle = (
+    type: "add" | "convert" | "edit" | "delete"
+  ) => {
+    const baseStyle = {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 10,
+      borderWidth: 2,
+      gap: 8,
+      minWidth: 0,
+    };
+
+    switch (type) {
+      case "add":
+        return {
+          ...baseStyle,
+          // backgroundColor: "#E8F5E8",
+          borderColor: Colors.success,
+        };
+      case "convert":
+        return {
+          ...baseStyle,
+          // backgroundColor: "#E3F2FD",
+          borderColor: Colors.primary,
+        };
+      case "edit":
+        return {
+          ...baseStyle,
+          // backgroundColor: "#FFF3E0",
+          borderColor: Colors.warning,
+        };
+      case "delete":
+        return {
+          ...baseStyle,
+          // backgroundColor: "#FFEBEE",
+          borderColor: Colors.error,
+        };
+      default:
+        return {
+          ...baseStyle,
+          backgroundColor: Colors.neutral,
+          borderColor: Colors.borderLight,
+        };
+    }
+  };
+
+  const getActionButtonTextStyle = (
+    type: "add" | "convert" | "edit" | "delete"
+  ) => {
+    const baseStyle = {
+      fontSize: 12,
+      fontFamily: "JakarthaBold" as const,
+      textAlign: "center" as const,
+      flexShrink: 1,
+    };
+
+    switch (type) {
+      case "add":
+        return {
+          ...baseStyle,
+          color: Colors.success,
+        };
+      case "convert":
+        return {
+          ...baseStyle,
+          color: Colors.primary,
+        };
+      case "edit":
+        return {
+          ...baseStyle,
+          color: Colors.warning,
+        };
+      case "delete":
+        return {
+          ...baseStyle,
+          color: Colors.error,
+        };
+      default:
+        return {
+          ...baseStyle,
+          color: Colors.text,
+        };
+    }
+  };
+
   const toggleActions = () => {
     setIsActionsExpanded(!isActionsExpanded);
   };
@@ -164,21 +253,21 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             <View style={styles.actionRow}>
               {onAddFunds && (
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={getActionButtonStyle("add")}
                   onPress={onAddFunds}
                 >
                   <Icon name="plus" size={18} color={Colors.success} />
-                  <Text style={styles.actionButtonLabel}>Add Funds</Text>
+                  <Text style={getActionButtonTextStyle("add")}>Add Funds</Text>
                 </TouchableOpacity>
               )}
               {onConvertToExpense && goal.CurrentAmount > 0 && (
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={getActionButtonStyle("convert")}
                   onPress={onConvertToExpense}
                 >
                   <Icon name="transfer" size={18} color={Colors.primary} />
-                  <Text style={styles.actionButtonLabel}>
-                    Convert to Expense
+                  <Text style={getActionButtonTextStyle("convert")}>
+                    Save as Expense
                   </Text>
                 </TouchableOpacity>
               )}
@@ -187,14 +276,21 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             {/* Second Row */}
             <View style={styles.actionRow}>
               {onEdit && (
-                <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
-                  <Icon name="pencil-outline" size={18} color={Colors.text} />
-                  <Text style={styles.actionButtonLabel}>Edit</Text>
+                <TouchableOpacity
+                  style={getActionButtonStyle("edit")}
+                  onPress={onEdit}
+                >
+                  <Icon
+                    name="pencil-outline"
+                    size={18}
+                    color={Colors.warning}
+                  />
+                  <Text style={getActionButtonTextStyle("edit")}>Edit</Text>
                 </TouchableOpacity>
               )}
               {onDelete && (
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={getActionButtonStyle("delete")}
                   onPress={onDelete}
                 >
                   <Icon
@@ -202,7 +298,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                     size={18}
                     color={Colors.error}
                   />
-                  <Text style={styles.actionButtonLabel}>Delete</Text>
+                  <Text style={getActionButtonTextStyle("delete")}>Delete</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -318,13 +414,13 @@ const styles = StyleSheet.create({
   actionsButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    gap: 4,
+    // backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    // borderRadius: 10,
+    // borderWidth: 2,
+    // borderColor: Colors.primary,
+    gap: 6,
   },
   actionsButtonText: {
     fontSize: 12,
@@ -332,38 +428,38 @@ const styles = StyleSheet.create({
     fontFamily: "JakarthaBold",
   },
   expandedActions: {
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 15,
+    paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
   },
   actionButtonsContainer: {
     flexDirection: "column",
-    gap: 8,
+    gap: 12,
   },
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 8,
+    gap: 12,
   },
   actionButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 6,
-    borderWidth: 1,
+    backgroundColor: Colors.neutral,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 2,
     borderColor: Colors.borderLight,
-    gap: 6,
+    gap: 8,
     minWidth: 0,
   },
   actionButtonLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.text,
-    fontFamily: "JakarthaRegular",
+    fontFamily: "JakarthaBold",
     textAlign: "center",
     flexShrink: 1,
   },
