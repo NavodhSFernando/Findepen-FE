@@ -50,6 +50,13 @@ const LoginPage: React.FC = () => {
         // Use the auth context to handle login
         await login(token);
 
+        // Check if balance is -1 and route to /welcome instead
+        const user = response.data.User;
+        if (user && user.Balance === -1) {
+          router.push("/welcome");
+          return;
+        }
+
         // Navigate to main app
         router.push("/");
       } else {
@@ -153,6 +160,14 @@ const LoginPage: React.FC = () => {
             onPress={() => router.push("/register")}
           />
         </View>
+        <View style={styles.buttonWrapper}>
+          <Text
+            style={styles.onboardingText}
+            onPress={() => router.push("/welcome")}
+          >
+            👋 First time here? Start with our tour
+          </Text>
+        </View>
       </View>
     </ParallaxScrollView>
   );
@@ -206,6 +221,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     fontFamily: "JakarthaRegular",
+  },
+  onboardingText: {
+    color: Colors.primary,
+    fontSize: 14,
+    marginTop: 10,
+    marginHorizontal: "auto",
+    fontFamily: "JakarthaBold",
   },
 });
 
