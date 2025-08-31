@@ -1,7 +1,7 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router'; 
 import { getToken } from './getToken';
+import { clearAuthToken } from './tokenValidation';
 
 const api = axios.create({
   baseURL: 'http://192.168.1.6:5141/api/', 
@@ -28,11 +28,14 @@ api.interceptors.request.use(
 // Response Interceptor to handle 401 errors globally
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       // Clear the stored token on 401 errors
-      SecureStore.deleteItemAsync("authToken").catch(console.error);
-      console.log("Token cleared due to 401 error");
+      await clearAuthToken();
+      console.log("Token cleared due to 401 error - redirecting to login");
+      
+      // Redirect to login screen
+      router.replace("/login");
     }
     return Promise.reject(error);
   }

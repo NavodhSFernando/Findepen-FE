@@ -9,6 +9,7 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Colors } from "@/constants/Colors";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LoginForm {
   email: string;
@@ -17,6 +18,7 @@ interface LoginForm {
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
+  const { login } = useAuth();
   const [loginError, setLoginError] = useState<string | null>(null);
   const {
     control,
@@ -38,19 +40,28 @@ const LoginPage: React.FC = () => {
       );
 
       console.log("Logged in successfully:", response.data);
-      router.push("/");
 
       // Store token securely - Backend returns "Token" (capital T) due to JSON serialization
       const token = response.data.Token;
       if (token) {
         await SecureStore.setItemAsync("authToken", token);
         console.log("Token stored successfully");
+
+        // Use the auth context to handle login
+        await login(token);
+
+        // Navigate to main app
+        router.push("/");
+      } else {
+        throw new Error("No token received from server");
       }
     } catch (err: any) {
       console.error("Login error:", err);
       // Better error handling - show specific backend error message
       if (err.response?.data?.message) {
         setLoginError(err.response.data.message);
+      } else if (err.message) {
+        setLoginError(err.message);
       } else {
         setLoginError("Incorrect email or password");
       }
