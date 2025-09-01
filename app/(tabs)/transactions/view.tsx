@@ -55,8 +55,8 @@ const TransactionViewPage: React.FC = () => {
 
   const handleDelete = async () => {
     Alert.alert(
-      "Delete Transaction",
-      "Are you sure you want to delete this transaction? This action cannot be undone.",
+      "Reverse Transaction",
+      "Are you sure you want to reverse this transaction? This action cannot be undone.",
       [
         {
           text: "Cancel",
@@ -70,7 +70,7 @@ const TransactionViewPage: React.FC = () => {
               setDeleting(true);
               const success = await deleteTransaction(id!);
               if (success) {
-                Alert.alert("Success", "Transaction deleted successfully", [
+                Alert.alert("Success", "Transaction reversed successfully", [
                   {
                     text: "OK",
                     onPress: () => router.replace("/transactions"),
@@ -79,11 +79,11 @@ const TransactionViewPage: React.FC = () => {
               } else {
                 Alert.alert(
                   "Error",
-                  "Failed to delete transaction. Please try again."
+                  "Failed to reverse transaction. Please try again."
                 );
               }
             } catch (err) {
-              console.error("Transaction deletion error:", err);
+              console.error("Transaction reversal error:", err);
               Alert.alert(
                 "Error",
                 "An unexpected error occurred. Please try again."

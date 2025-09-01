@@ -33,7 +33,7 @@ interface TransactionForm {
 const AddTransactionPage: React.FC = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ prefill?: string }>();
-  const { createTransaction } = useTransactions();
+  const { createTransaction, balance, fetchBalance } = useTransactions();
   const { categories, loading: categoriesLoading } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -54,6 +54,11 @@ const AddTransactionPage: React.FC = () => {
       date: new Date().toISOString().split("T")[0], // Today's date as default
     },
   });
+
+  // Fetch balance when component mounts
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
 
   // Handle pre-filled data from receipt scanning
   useEffect(() => {
@@ -85,10 +90,22 @@ const AddTransactionPage: React.FC = () => {
     try {
       setIsSubmitting(true);
 
+      const transactionAmount = parseFloat(data.amount);
+
+      // Validate balance for expense transactions
+      if (data.type === "Expense" && balance < transactionAmount) {
+        Alert.alert(
+          "Insufficient Balance",
+          `Your current balance is Rs. ${balance.toFixed(2)}. This transaction would exceed your available funds.`,
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       const apiTransactionData = {
         Title: data.title,
         Description: data.description || undefined,
-        Amount: parseFloat(data.amount),
+        Amount: transactionAmount,
         Category: data.category || undefined,
         Type: data.type,
         Date: data.date,
@@ -146,6 +163,12 @@ const AddTransactionPage: React.FC = () => {
       }
     >
       <View style={styles.bodyContainer}>
+        {/* Balance Display */}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Current Balance</Text>
+          <Text style={styles.infoValue}>Rs. {balance.toFixed(2)}</Text>
+        </View>
+
         <Controller
           control={control}
           name="type"
@@ -326,5 +349,53 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     width: "100%",
     alignItems: "center",
+  },
+  balanceContainer: {
+    backgroundColor: Colors.neutral,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignItems: "center",
+    shadowColor: Colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
+    color: Colors.borderLight,
+    marginBottom: 4,
+  },
+  balanceAmount: {
+    fontSize: 24,
+    fontFamily: "JakarthaBold",
+    color: Colors.text,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.neutral,
+    borderRadius: 8,
+    marginBottom: 8,
+    width: "100%",
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
+    color: Colors.text,
+    opacity: 0.7,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontFamily: "JakarthaSemiBold",
+    color: Colors.text,
   },
 });
