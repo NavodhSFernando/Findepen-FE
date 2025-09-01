@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Colors } from "@/constants/Colors";
@@ -155,101 +156,106 @@ const ConvertToExpenseModal: React.FC<ConvertToExpenseModalProps> = ({
               </View>
             </View>
 
-            {/* Amount Input */}
-            <View style={styles.inputContainer}>
-              <Input
-                label="Amount to Convert"
-                placeholder="Enter amount to convert"
-                type="text"
-                value={amount.toString()}
-                onChangeText={(text) => setAmount(parseFloat(text) || 0)}
-                editable={!loading}
-                keyboardType="numeric"
-              />
-              <Text style={styles.helperText}>
-                Maximum: Rs. {(goal.CurrentAmount ?? 0).toFixed(2)}
-              </Text>
-            </View>
+            <ScrollView
+              style={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Amount Input */}
+              <View style={styles.inputContainer}>
+                <Input
+                  label="Amount to Convert"
+                  placeholder="Enter amount to convert"
+                  type="text"
+                  value={amount.toString()}
+                  onChangeText={(text) => setAmount(parseFloat(text) || 0)}
+                  editable={!loading}
+                  keyboardType="numeric"
+                />
+                <Text style={styles.helperText}>
+                  Maximum: Rs. {(goal.CurrentAmount ?? 0).toFixed(2)}
+                </Text>
+              </View>
 
-            {/* Transaction Title */}
-            <View style={styles.inputContainer}>
-              <Input
-                label="Transaction Title"
-                placeholder="Enter transaction title"
-                type="text"
-                value={transactionTitle}
-                onChangeText={setTransactionTitle}
-                editable={!loading}
-              />
-            </View>
+              {/* Transaction Title */}
+              <View style={styles.inputContainer}>
+                <Input
+                  label="Transaction Title"
+                  placeholder="Enter transaction title"
+                  type="text"
+                  value={transactionTitle}
+                  onChangeText={setTransactionTitle}
+                  editable={!loading}
+                />
+              </View>
 
-            {/* Category Selector */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Category</Text>
-              <View style={styles.categorySelectRow}>
-                {categories.map((cat) => (
+              {/* Category Selector */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Category</Text>
+                <View style={styles.categorySelectRow}>
+                  {categories.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.categoryOption,
+                        category === cat && styles.categoryOptionSelected,
+                      ]}
+                      onPress={() => setCategory(cat)}
+                      disabled={loading}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryOptionText,
+                          category === cat && styles.categoryOptionTextSelected,
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Description */}
+              <View style={styles.inputContainer}>
+                <Input
+                  label="Description (Optional)"
+                  placeholder="Add a description"
+                  type="text"
+                  value={transactionDescription}
+                  onChangeText={setTransactionDescription}
+                  editable={!loading}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              {/* Goal Completion Toggle */}
+              <View style={styles.inputContainer}>
+                <View style={styles.toggleContainer}>
+                  <Text style={styles.label}>Mark Goal as Completed</Text>
                   <TouchableOpacity
-                    key={cat}
                     style={[
-                      styles.categoryOption,
-                      category === cat && styles.categoryOptionSelected,
+                      styles.toggleButton,
+                      markGoalAsCompleted && styles.toggleButtonActive,
                     ]}
-                    onPress={() => setCategory(cat)}
+                    onPress={() => setMarkGoalAsCompleted(!markGoalAsCompleted)}
                     disabled={loading}
                   >
-                    <Text
+                    <View
                       style={[
-                        styles.categoryOptionText,
-                        category === cat && styles.categoryOptionTextSelected,
+                        styles.toggleThumb,
+                        markGoalAsCompleted && styles.toggleThumbActive,
                       ]}
-                    >
-                      {cat}
-                    </Text>
+                    />
                   </TouchableOpacity>
-                ))}
+                </View>
+                <Text style={styles.toggleDescription}>
+                  {markGoalAsCompleted
+                    ? "Goal will be marked as completed after conversion"
+                    : "Goal will remain active after conversion"}
+                </Text>
               </View>
-            </View>
-
-            {/* Description */}
-            <View style={styles.inputContainer}>
-              <Input
-                label="Description (Optional)"
-                placeholder="Add a description"
-                type="text"
-                value={transactionDescription}
-                onChangeText={setTransactionDescription}
-                editable={!loading}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            {/* Goal Completion Toggle */}
-            <View style={styles.inputContainer}>
-              <View style={styles.toggleContainer}>
-                <Text style={styles.label}>Mark Goal as Completed</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.toggleButton,
-                    markGoalAsCompleted && styles.toggleButtonActive,
-                  ]}
-                  onPress={() => setMarkGoalAsCompleted(!markGoalAsCompleted)}
-                  disabled={loading}
-                >
-                  <View
-                    style={[
-                      styles.toggleThumb,
-                      markGoalAsCompleted && styles.toggleThumbActive,
-                    ]}
-                  />
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.toggleDescription}>
-                {markGoalAsCompleted
-                  ? "Goal will be marked as completed after conversion"
-                  : "Goal will remain active after conversion"}
-              </Text>
-            </View>
+            </ScrollView>
 
             {/* Action Buttons */}
             <View style={styles.buttonContainer}>
@@ -307,7 +313,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   title: {
     fontSize: 18,
@@ -323,11 +329,18 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.borderLight,
     marginBottom: 16,
   },
+  scrollContent: {
+    maxHeight: 300,
+  },
   goalInfoSummary: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: Colors.background,
+    padding: 18,
+    borderRadius: 14,
     marginBottom: 20,
+    shadowColor: Colors.text,
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   summaryRow: {
     flexDirection: "row",

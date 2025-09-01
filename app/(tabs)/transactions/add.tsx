@@ -260,7 +260,7 @@ const AddTransactionPage: React.FC = () => {
 
         <View style={styles.buttonWrapper}>
           <Button
-            title={isSubmitting ? "Creating..." : "Create Transaction"}
+            title={isSubmitting ? "Creating..." : "Create"}
             onPress={handleSubmit(submitTransaction)}
             variant="primary"
             disabled={isSubmitting || categoriesLoading}

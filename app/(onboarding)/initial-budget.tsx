@@ -200,12 +200,12 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: Colors.white,
-    padding: 24,
-    borderRadius: 16,
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.borderLight,
     width: "100%",
-    maxWidth: 320,
+    maxWidth: 280,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -216,20 +216,22 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   infoTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "600",
     color: Colors.text,
     marginBottom: 12,
     textAlign: "center",
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.fadedText,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 15,
   },
   footer: {
     alignItems: "center",
+    marginTop: "auto",
+    paddingBottom: 40,
   },
   getStartedButton: {
     backgroundColor: Colors.primary,

@@ -25,7 +25,7 @@ interface BudgetForm {
 
 const AddBudgetPage: React.FC = () => {
   const router = useRouter();
-  const { createBudget } = useBudgets();
+  const { createBudget, categoriesWithActiveBudgets } = useBudgets();
   const { categories, loading: categoriesLoading } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,6 +48,11 @@ const AddBudgetPage: React.FC = () => {
   });
 
   const selectedCategory = watch("category");
+
+  // Filter out categories that already have active budgets
+  const availableCategories = categories.filter(
+    (category) => !categoriesWithActiveBudgets.includes(category)
+  );
 
   const submitBudget = async (data: BudgetForm) => {
     try {
@@ -121,16 +126,23 @@ const AddBudgetPage: React.FC = () => {
           render={({ field: { value } }) => (
             <Selector
               label="Category"
-              options={categories}
+              options={availableCategories}
               value={value}
               onValueChange={(option) => setValue("category", option)}
-              disabled={categoriesLoading}
+              disabled={categoriesLoading || availableCategories.length === 0}
               loading={categoriesLoading}
             />
           )}
         />
         {errors.category && (
           <Text style={styles.errorText}>{errors.category.message}</Text>
+        )}
+
+        {!categoriesLoading && availableCategories.length === 0 && (
+          <Text style={styles.errorText}>
+            All categories already have active budgets. Please complete or
+            delete existing budgets before creating new ones.
+          </Text>
         )}
 
         <Controller

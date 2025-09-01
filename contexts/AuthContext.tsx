@@ -10,6 +10,7 @@ import { getToken } from "@/utilities/getToken";
 import {
   validateAndCleanupToken,
   isTokenExpiringSoon,
+  clearAuthToken,
 } from "@/utilities/tokenValidation";
 
 interface AuthContextType {
@@ -95,6 +96,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(false);
       setUser(null);
       setAuthError(null);
+
+      await clearAuthToken();
       // Token will be cleared by the axios interceptor or layout
       router.replace("/login");
     } catch (error) {

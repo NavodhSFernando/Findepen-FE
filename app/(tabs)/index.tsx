@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Animated } from "react-native";
 import TotalBalance from "@/components/ui/TotalBalance";
 import { Colors } from "@/constants/Colors";
 import TotalReserves from "@/components/ui/TotalReserves";
@@ -9,10 +9,13 @@ import { useRouter, useFocusEffect } from "expo-router";
 import CircularProgress from "@/components/ui/CircularProgress";
 import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
 import { ReceiptScanner } from "@/components/ui/ReceiptScanner";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import useTransactions from "@/hooks/useTransactions";
 import HistoricalDataChart from "@/components/ui/HistoricalDataChart";
 import useHistoricalData from "@/hooks/useHistoricalData";
+import SummaryCardSkeleton from "@/components/ui/SummaryCardSkeleton";
+import TransactionSkeleton from "@/components/ui/TransactionSkeleton";
+
 // Local interface for receipt processing
 interface TransactionData {
   Title: string;
@@ -36,12 +39,14 @@ export default function Overview() {
   const router = useRouter();
   const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
   const [isReceiptScannerVisible, setIsReceiptScannerVisible] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
   const {
     transactions,
     balance,
     expenses,
     reserves,
-    loading,
+    loading: transactionsLoading,
     error,
     fetchTransactions,
     fetchBalance,
@@ -55,15 +60,46 @@ export default function Overview() {
     refetch: refetchChart,
   } = useHistoricalData(30); // Get last 30 days of data
 
-  // Refresh data when the page comes into focus
+  // Global loading state - true if any critical data is still loading
+  const isGlobalLoading = transactionsLoading || chartLoading;
+
+  // Load all data in parallel on initial mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([
+          fetchTransactions(),
+          fetchBalance(),
+          fetchReserves(),
+          refetchChart(),
+        ]);
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Refresh data when the page comes into focus, but only if we haven't loaded data yet
   useFocusEffect(
     useCallback(() => {
-      fetchTransactions();
-      fetchBalance();
-      fetchReserves();
-      refetchChart();
-    }, [])
+      // Only refresh if we haven't loaded any data yet (transactions array is empty)
+      if (transactions.length === 0 && !transactionsLoading && !chartLoading) {
+        fetchTransactions();
+        fetchBalance();
+        fetchReserves();
+        refetchChart();
+      }
+    }, [transactions.length, transactionsLoading, chartLoading])
   );
+
+  // Redirect to welcome page if balance is -1
+  useEffect(() => {
+    if (balance === -1) {
+      router.replace("/welcome");
+    }
+  }, [balance, router]);
 
   const handleInputMethodSelect = (method: "manual" | "scan") => {
     console.log("Selected method:", method);
@@ -87,8 +123,10 @@ export default function Overview() {
   // Get the latest 2 transactions
   const latestTransactions = transactions.slice(0, 2);
 
+  // Always show the main content, let individual components handle their loading states
+
   return (
-    <View style={styles.mainContainer}>
+    <Animated.View style={[styles.mainContainer, { opacity: fadeAnim }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -113,12 +151,21 @@ export default function Overview() {
           {/* Summary Section */}
           <View style={styles.summaryContainer}>
             <View style={styles.summaryRow}>
-              <View style={styles.summaryCard}>
-                <TotalBalance totalBalance={balance} />
-              </View>
-              <View style={styles.summaryCard}>
-                <TotalReserves totalReserves={reserves} />
-              </View>
+              {transactionsLoading ? (
+                <>
+                  <SummaryCardSkeleton />
+                  <SummaryCardSkeleton />
+                </>
+              ) : (
+                <>
+                  <View style={styles.summaryCard}>
+                    <TotalBalance totalBalance={balance} />
+                  </View>
+                  <View style={styles.summaryCard}>
+                    <TotalReserves totalReserves={reserves} />
+                  </View>
+                </>
+              )}
             </View>
           </View>
 
@@ -143,8 +190,11 @@ export default function Overview() {
               </Text>
             </View>
             <View style={styles.transactionList}>
-              {loading ? (
-                <Text style={styles.loadingText}>Loading transactions...</Text>
+              {transactionsLoading ? (
+                <>
+                  <TransactionSkeleton />
+                  <TransactionSkeleton />
+                </>
               ) : error ? (
                 <Text style={styles.errorText}>{error}</Text>
               ) : latestTransactions.length === 0 ? (
@@ -181,7 +231,7 @@ export default function Overview() {
         onClose={() => setIsReceiptScannerVisible(false)}
         onReceiptProcessed={handleReceiptProcessed}
       />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -191,6 +241,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     paddingHorizontal: 20,
   },
+
   scrollView: {
     flex: 1,
   },
@@ -279,17 +330,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  bodyContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: 24,
-    width: "100%",
-    flexShrink: 0,
-    backgroundColor: Colors.background,
-    paddingTop: 30,
-    paddingBottom: 20,
-  },
+
   recentTransactionsContainer: {
     backgroundColor: Colors.background,
     borderRadius: 16,
@@ -328,15 +369,7 @@ const styles = StyleSheet.create({
   transactionList: {
     display: "flex",
     flexDirection: "column",
-    gap: 5,
     width: "100%",
-  },
-  loadingText: {
-    fontFamily: "JakarthaRegular",
-    fontSize: 12,
-    color: Colors.text,
-    textAlign: "center",
-    paddingVertical: 10,
   },
   errorText: {
     fontFamily: "JakarthaRegular",

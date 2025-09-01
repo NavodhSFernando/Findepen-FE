@@ -221,7 +221,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
             Rs. {(safeCurrentAmount ?? 0).toFixed(2)}
           </Text>
           <Text style={styles.progressPercentage}>
-            {Math.round(progress * 100)}%
+            {Math.round(progress * 100)}% completed
           </Text>
         </View>
       </View>

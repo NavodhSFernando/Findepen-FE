@@ -56,14 +56,18 @@ const useTransactions = () => {
   const [balance, setBalance] = useState<number>(0);
   const [expenses, setExpenses] = useState<number>(0);
   const [reserves, setReserves] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const fetchTransactions = async () => {
-    try {
+    // Don't set loading to true if we already have data and this is a refresh
+    if (transactions.length === 0) {
       setLoading(true);
-      setError(null);
+    }
+    setError(null);
+    
+    try {
       const response = await api.get('/transactions');
       setTransactions(response.data);
       setIsAuthenticated(true);
@@ -175,11 +179,8 @@ const useTransactions = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTransactions();
-    fetchBalance();
-    fetchReserves();
-  }, []);
+  // Remove the automatic data fetching from useEffect
+  // Data will be fetched explicitly when needed
 
   return {
     transactions,

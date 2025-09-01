@@ -215,6 +215,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: "center",
+    marginTop: "auto",
+    paddingBottom: 80,
   },
   nextButton: {
     backgroundColor: Colors.primary,

@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Alert,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useState, useCallback } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
@@ -104,38 +105,8 @@ const RecurringTransactionsPage = () => {
     router.push("/more");
   };
 
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>
-          Loading recurring transactions...
-        </Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <MaterialCommunityIcons
-          name="alert-circle"
-          size={48}
-          color={Colors.error}
-        />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => {
-            clearError();
-            refreshData();
-          }}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  // Show loading state for initial load only, not during refresh
+  const isInitialLoading = loading && !refreshing;
 
   return (
     <ParallaxScrollView
@@ -160,91 +131,118 @@ const RecurringTransactionsPage = () => {
       }
     >
       <View style={styles.bodyContainer}>
-        {summary && summary.TotalRecurringTransactions > 0 && (
-          <View style={styles.summaryContainer}>
-            <Text style={styles.summaryTitle}>
-              Recurring Transaction Summary
-            </Text>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total Transactions:</Text>
-              <Text style={styles.summaryValue}>
-                {summary.TotalRecurringTransactions}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Active:</Text>
-              <Text style={styles.summaryValue}>
-                {summary.ActiveRecurringTransactions}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Paused:</Text>
-              <Text style={styles.summaryValue}>
-                {summary.PausedRecurringTransactions}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Cancelled:</Text>
-              <Text style={styles.summaryValue}>
-                {summary.CancelledRecurringTransactions}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Monthly Total:</Text>
-              <Text style={styles.summaryValue}>
-                Rs. {summary.TotalMonthlyAmount.toFixed(2)}
-              </Text>
-            </View>
+        {/* Error State */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={48}
+              color={Colors.error}
+            />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => {
+                clearError();
+                refreshData();
+              }}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {recurringTransactions.length > 0 && (
-          <Text style={styles.transactionText}>
-            Your Recurring Transactions
-          </Text>
-        )}
-
-        {recurringTransactions.map((transaction) => (
-          <RecurringTransactionCard
-            key={transaction.Id}
-            id={transaction.Id}
-            title={transaction.Title}
-            description={transaction.Description}
-            amount={transaction.Amount}
-            category={transaction.Category}
-            type={transaction.Type}
-            frequency={transaction.Frequency}
-            startDate={transaction.StartDate}
-            endDate={transaction.EndDate}
-            nextOccurrenceDate={transaction.NextOccurrenceDate}
-            status={transaction.Status}
-            occurrenceCount={transaction.OccurrenceCount}
-            lastCreatedDate={transaction.LastCreatedDate}
-            formattedAmountWithSign={transaction.FormattedAmountWithSign}
-            isIncome={transaction.IsIncome}
-            isExpense={transaction.IsExpense}
-            isActive={transaction.IsActive}
-            canBeProcessed={transaction.CanBeProcessed}
-            isExpired={transaction.IsExpired}
-            daysUntilNextOccurrence={transaction.DaysUntilNextOccurrence}
-            statusDisplayName={transaction.StatusDisplayName}
-            frequencyDisplayName={transaction.FrequencyDisplayName}
-            nextOccurrenceFormatted={transaction.NextOccurrenceFormatted}
-            startDateFormatted={transaction.StartDateFormatted}
-            endDateFormatted={transaction.EndDateFormatted}
-            onView={() => handleViewRecurringTransaction(transaction)}
-          />
-        ))}
-
-        {!loading && recurringTransactions.length === 0 && !error && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              No recurring transactions found
-            </Text>
-            <Text style={styles.emptySubtext}>
-              Create your first recurring transaction to get started
+        {/* Loading State */}
+        {isInitialLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>
+              Loading recurring transactions...
             </Text>
           </View>
+        ) : (
+          <>
+            {/* Summary Card */}
+            {summary && summary.TotalRecurringTransactions > 0 && (
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={styles.motivationalCardContainer}
+              >
+                <LinearGradient
+                  colors={[Colors.secondary, Colors.primary]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.motivationalCard}
+                >
+                  <Text style={styles.motivationalDescription}>
+                    You have{"  "}
+                    <Text style={{ fontFamily: "JakarthaBold" }}>
+                      {summary.TotalRecurringTransactions}
+                    </Text>
+                    {"  "}
+                    recurring transactions
+                  </Text>
+                  <View style={styles.progressBadge}>
+                    <Text style={styles.progressBadgeText}>
+                      {summary.ActiveRecurringTransactions} Active •{" "}
+                      {summary.PausedRecurringTransactions} Paused
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+
+            {/* Transactions List */}
+            {recurringTransactions.length > 0 && (
+              <Text style={styles.transactionText}>
+                Your Recurring Transactions
+              </Text>
+            )}
+
+            {recurringTransactions.map((transaction) => (
+              <RecurringTransactionCard
+                key={transaction.Id}
+                id={transaction.Id}
+                title={transaction.Title}
+                description={transaction.Description}
+                amount={transaction.Amount}
+                category={transaction.Category}
+                type={transaction.Type}
+                frequency={transaction.Frequency}
+                startDate={transaction.StartDate}
+                endDate={transaction.EndDate}
+                nextOccurrenceDate={transaction.NextOccurrenceDate}
+                status={transaction.Status}
+                occurrenceCount={transaction.OccurrenceCount}
+                lastCreatedDate={transaction.LastCreatedDate}
+                formattedAmountWithSign={transaction.FormattedAmountWithSign}
+                isIncome={transaction.IsIncome}
+                isExpense={transaction.IsExpense}
+                isActive={transaction.IsActive}
+                canBeProcessed={transaction.CanBeProcessed}
+                isExpired={transaction.IsExpired}
+                daysUntilNextOccurrence={transaction.DaysUntilNextOccurrence}
+                statusDisplayName={transaction.StatusDisplayName}
+                frequencyDisplayName={transaction.FrequencyDisplayName}
+                nextOccurrenceFormatted={transaction.NextOccurrenceFormatted}
+                startDateFormatted={transaction.StartDateFormatted}
+                endDateFormatted={transaction.EndDateFormatted}
+                onView={() => handleViewRecurringTransaction(transaction)}
+              />
+            ))}
+
+            {/* Empty State */}
+            {recurringTransactions.length === 0 && !error && (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  No recurring transactions found
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  Create your first recurring transaction to get started
+                </Text>
+              </View>
+            )}
+          </>
         )}
       </View>
     </ParallaxScrollView>
@@ -297,6 +295,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: Colors.background,
+    minHeight: 300,
+    paddingVertical: 40,
   },
   loadingText: {
     marginTop: 16,
@@ -375,6 +375,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "JakarthaRegular",
     color: Colors.borderLight,
+    textAlign: "center",
+  },
+  motivationalCardContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  motivationalCard: {
+    padding: 25,
+    width: "100%",
+    alignItems: "center",
+    borderRadius: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  motivationalTitle: {
+    fontSize: 18,
+    fontFamily: "JakarthaBold",
+    color: Colors.neutral,
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  motivationalDescription: {
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
+    color: Colors.neutral,
+    textAlign: "center",
+    marginBottom: 20,
+    opacity: 0.95,
+  },
+  progressBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  progressBadgeText: {
+    fontSize: 12,
+    fontFamily: "JakarthaBold",
+    color: Colors.neutral,
     textAlign: "center",
   },
 });

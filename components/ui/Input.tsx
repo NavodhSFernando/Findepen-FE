@@ -17,6 +17,7 @@ interface InputProps extends TextInputProps {
   type?: "text" | "number" | "date" | "password" | "email";
   format?: string;
   iconName?: string;
+  disabled?: boolean;
 }
 
 const InputField: React.FC<InputProps> = ({
@@ -25,6 +26,7 @@ const InputField: React.FC<InputProps> = ({
   type = "text",
   format = "YYYY-MM-DD",
   iconName = "",
+  disabled = false,
   ...props
 }) => {
   const [inputText, setInputText] = useState<string | number | Date>("");
@@ -76,7 +78,8 @@ const InputField: React.FC<InputProps> = ({
           <>
             <TouchableOpacity
               onPress={openDatePicker}
-              style={styles.dateButton}
+              style={[styles.dateButton, disabled && styles.disabled]}
+              disabled={disabled}
             >
               <Text style={styles.dateText}>
                 {inputText instanceof Date
@@ -102,7 +105,7 @@ const InputField: React.FC<InputProps> = ({
         ) : (
           <>
             <TextInput
-              style={styles.input}
+              style={[styles.input, disabled && styles.disabled]}
               value={inputText ? String(inputText) : ""}
               onChangeText={handleTextChange}
               placeholder={placeholder}
@@ -114,6 +117,7 @@ const InputField: React.FC<InputProps> = ({
                     : "default"
               }
               secureTextEntry={type === "password" && !isPasswordVisible}
+              editable={!disabled}
               {...props}
             />
             {type === "password" && (
@@ -193,6 +197,10 @@ const styles = StyleSheet.create({
     // Center the icon vertically
     alignSelf: "center",
     opacity: 0.5,
+  },
+  disabled: {
+    opacity: 0.5,
+    backgroundColor: "#f5f5f5",
   },
 });
 

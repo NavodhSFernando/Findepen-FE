@@ -143,7 +143,7 @@ const AddRecurringTransactionPage: React.FC = () => {
               size={40}
             />
           </View>
-          <Title text="Add Recurring Transaction" />
+          <Title text="Create" />
         </View>
       }
     >
@@ -297,9 +297,7 @@ const AddRecurringTransactionPage: React.FC = () => {
 
         <View style={styles.buttonWrapper}>
           <Button
-            title={
-              isSubmitting ? "Creating..." : "Create Recurring Transaction"
-            }
+            title={isSubmitting ? "Creating..." : "Create"}
             onPress={handleSubmit(submitRecurringTransaction)}
             variant="primary"
             disabled={isSubmitting}

@@ -153,7 +153,7 @@ const GoalSummaryModal: React.FC<GoalSummaryModalProps> = ({
                 style={styles.motivationalCard}
               >
                 <Text style={styles.motivationalText}>
-                  Keep going! Only ₹{summary.TotalRemainingAmount.toFixed(0)}{" "}
+                  Keep going! Only Rs.{summary.TotalRemainingAmount.toFixed(0)}{" "}
                   left to achieve your goals
                 </Text>
               </LinearGradient>

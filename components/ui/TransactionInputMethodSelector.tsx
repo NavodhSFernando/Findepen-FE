@@ -8,6 +8,7 @@ import {
   Text,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { Colors } from "@/constants/Colors";
 
 type InputMethod = "manual" | "scan";
 
@@ -29,11 +30,12 @@ export const TransactionInputMethodSelector: React.FC<
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="slide"
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
+          <View style={styles.handle} />
           <Text style={styles.title}>Select Input Method</Text>
 
           {methods.map((method) => (
@@ -45,11 +47,13 @@ export const TransactionInputMethodSelector: React.FC<
                 onClose();
               }}
             >
-              <MaterialCommunityIcons
-                name={method.icon}
-                size={24}
-                color="#000"
-              />
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons
+                  name={method.icon}
+                  size={24}
+                  color={Colors.primary}
+                />
+              </View>
               <Text style={styles.methodLabel}>{method.label}</Text>
             </TouchableOpacity>
           ))}
@@ -70,43 +74,87 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     paddingBottom: 40,
     width: "100%",
     maxHeight: Dimensions.get("window").height * 0.7,
+    shadowColor: Colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.borderLight,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 20,
   },
   title: {
     fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 20,
+    fontFamily: "JakarthaBold",
+    marginBottom: 24,
     textAlign: "center",
-    color: "#000",
+    color: Colors.text,
   },
   methodButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
+    padding: 16,
+    backgroundColor: Colors.neutral,
+    borderRadius: 16,
     marginBottom: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
   },
   methodLabel: {
     fontSize: 16,
-    marginLeft: 16,
-    color: "#000",
+    fontFamily: "JakarthaSemiBold",
+    color: Colors.text,
+    flex: 1,
   },
   cancelButton: {
     marginTop: 20,
-    padding: 15,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
+    padding: 16,
+    backgroundColor: Colors.neutral,
+    borderRadius: 16,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    shadowColor: Colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cancelText: {
     fontSize: 16,
-    color: "#666",
+    fontFamily: "JakarthaSemiBold",
+    color: Colors.fadedText,
   },
 });

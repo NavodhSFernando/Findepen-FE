@@ -25,7 +25,6 @@ import Selector from "@/components/ui/Selector";
 interface BudgetForm {
   category: string;
   plannedAmount: string;
-  spentAmount: string;
   reminder: boolean;
   startDate: string;
   renewalFrequency: string;
@@ -35,7 +34,8 @@ interface BudgetForm {
 const EditBudgetPage: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { updateBudget, getBudgetById } = useBudgets();
+  const { updateBudget, getBudgetById, categoriesWithActiveBudgets } =
+    useBudgets();
   const { categories, loading: categoriesLoading } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -53,7 +53,6 @@ const EditBudgetPage: React.FC = () => {
     defaultValues: {
       category: "",
       plannedAmount: "",
-      spentAmount: "",
       reminder: false,
       startDate: "",
       renewalFrequency: "",
@@ -62,6 +61,14 @@ const EditBudgetPage: React.FC = () => {
   });
 
   const selectedCategory = watch("category");
+
+  // For edit, we need to include the current budget's category even if it has an active budget
+  // since we're editing that budget itself
+  const availableCategories = categories.filter(
+    (category) =>
+      category === selectedCategory ||
+      !categoriesWithActiveBudgets.includes(category)
+  );
 
   useEffect(() => {
     const fetchBudget = async () => {
@@ -73,7 +80,6 @@ const EditBudgetPage: React.FC = () => {
             reset({
               category: budgetData.Category || "",
               plannedAmount: (budgetData.PlannedAmount || "").toString(),
-              spentAmount: (budgetData.SpentAmount || "").toString(),
               reminder: budgetData.Reminder ?? false,
               startDate: budgetData.StartDate || "",
               renewalFrequency: budgetData.RenewalFrequency || "",
@@ -103,7 +109,6 @@ const EditBudgetPage: React.FC = () => {
       const budgetData = {
         Category: data.category,
         PlannedAmount: parseFloat(data.plannedAmount),
-        SpentAmount: parseFloat(data.spentAmount),
         Reminder: data.reminder,
         StartDate: data.startDate,
         RenewalFrequency: data.renewalFrequency,
@@ -167,10 +172,10 @@ const EditBudgetPage: React.FC = () => {
           render={({ field: { value, onChange } }) => (
             <Selector
               label="Category"
-              options={categories}
+              options={availableCategories}
               value={value}
               onValueChange={onChange}
-              disabled={categoriesLoading}
+              disabled={true} // Disabled - category cannot be changed after creation
               loading={categoriesLoading}
             />
           )}
@@ -178,6 +183,11 @@ const EditBudgetPage: React.FC = () => {
         {errors.category && (
           <Text style={styles.errorText}>{errors.category.message}</Text>
         )}
+
+        <Text style={styles.infoText}>
+          Category cannot be changed after budget creation to prevent conflicts
+          with other budgets.
+        </Text>
 
         <Controller
           control={control}
@@ -207,32 +217,6 @@ const EditBudgetPage: React.FC = () => {
 
         <Controller
           control={control}
-          name="spentAmount"
-          rules={{
-            required: "Spent amount is required",
-            validate: {
-              isPositive: (value) =>
-                parseFloat(value) >= 0 || "Amount must be 0 or greater",
-              isNumber: (value) =>
-                !isNaN(parseFloat(value)) || "Please enter a valid number",
-            },
-          }}
-          render={({ field: { onChange, value } }) => (
-            <InputField
-              label="Spent Amount"
-              placeholder="Enter spent amount"
-              type="number"
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
-        />
-        {errors.spentAmount && (
-          <Text style={styles.errorText}>{errors.spentAmount.message}</Text>
-        )}
-
-        <Controller
-          control={control}
           name="startDate"
           rules={{ required: "Start date is required" }}
           render={({ field: { onChange, value } }) => (
@@ -242,12 +226,18 @@ const EditBudgetPage: React.FC = () => {
               type="date"
               value={value}
               onChangeText={onChange}
+              disabled={true} // Disabled - start date cannot be changed after creation
             />
           )}
         />
         {errors.startDate && (
           <Text style={styles.errorText}>{errors.startDate.message}</Text>
         )}
+
+        <Text style={styles.infoText}>
+          Start date cannot be changed after budget creation to maintain
+          transaction associations.
+        </Text>
 
         <Controller
           control={control}
@@ -389,6 +379,14 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 5,
     fontFamily: "JakarthaRegular",
+  },
+  infoText: {
+    color: Colors.borderLight,
+    fontSize: 10,
+    marginTop: 5,
+    marginBottom: 10,
+    fontFamily: "JakarthaRegular",
+    fontStyle: "italic",
   },
   buttonWrapper: {
     width: "100%",

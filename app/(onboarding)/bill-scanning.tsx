@@ -216,14 +216,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: "center",
   },
-  // featureText: {
-  //     fontSize: 16,
-  //     color: Colors.fadedText,
-  //     textAlign: "center",
-  //     lineHeight: 24,
-  // },
   footer: {
     alignItems: "center",
+    marginTop: "auto",
+    paddingBottom: 80,
   },
   nextButton: {
     backgroundColor: Colors.primary,

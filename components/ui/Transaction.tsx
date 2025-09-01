@@ -62,6 +62,7 @@ const Transaction: React.FC<TransactionProps> = ({
           shadowOpacity: type === "expense" ? 0.15 : 0.12,
           shadowRadius: type === "expense" ? 10 : 8,
           elevation: type === "expense" ? 4 : 3,
+          borderColor: type === "expense" ? Colors.primary : "#2D3748",
         },
       ]}
     >
@@ -97,7 +98,7 @@ const Transaction: React.FC<TransactionProps> = ({
 const styles = StyleSheet.create({
   transactionItem: {
     display: "flex",
-    padding: 20,
+    padding: 12,
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
@@ -105,6 +106,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     backgroundColor: Colors.white,
     borderRadius: 16,
+    borderWidth: 2,
     marginVertical: 6,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 1 },
@@ -123,24 +125,24 @@ const styles = StyleSheet.create({
   descriptionBody: {
     display: "flex",
     flexDirection: "column",
-    gap: 2,
+    gap: 1,
   },
   descriptionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: "JakarthaBold",
     color: "#2D3748",
     fontWeight: "600",
     lineHeight: 20,
   },
   descriptionCategory: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "JakarthaRegular",
     color: "#6B7280",
     lineHeight: 18,
   },
   amount: {
     display: "flex",
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: "JakarthaBold",
     alignItems: "center",
     justifyContent: "center",

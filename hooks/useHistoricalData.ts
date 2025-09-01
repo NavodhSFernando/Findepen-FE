@@ -34,15 +34,18 @@ export interface ChartDataPoint {
 
 const useHistoricalData = (days: number = 30) => {
   const [data, setData] = useState<HistoricalData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const fetchHistoricalData = async () => {
-    try {
+    // Don't set loading to true if we already have data and this is a refresh
+    if (!data) {
       setLoading(true);
-      setError(null);
+    }
+    setError(null);
 
+    try {
       // Calculate date range
       const endDate = new Date();
       const startDate = new Date();
@@ -226,9 +229,8 @@ const useHistoricalData = (days: number = 30) => {
     };
   };
 
-  useEffect(() => {
-    fetchHistoricalData();
-  }, [days]);
+  // Remove the automatic data fetching from useEffect
+  // Data will be fetched explicitly when needed
 
   return {
     data,

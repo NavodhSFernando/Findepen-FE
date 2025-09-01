@@ -50,30 +50,50 @@ const ViewRecurringTransactionPage: React.FC = () => {
     if (!recurringTransaction) return;
 
     try {
-      Alert.alert(
-        "Update Status",
-        `Are you sure you want to ${newStatus.toLowerCase()} "${recurringTransaction.Title}"?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Update",
-            onPress: async () => {
-              try {
-                const success = await updateRecurringTransactionStatus(
-                  recurringTransaction.Id,
-                  newStatus
-                );
-                if (success) {
-                  await loadRecurringTransaction(); // Refresh data
-                  Alert.alert("Success", `Status updated to ${newStatus}`);
-                }
-              } catch (error) {
-                console.error("Error updating status:", error);
+      let title = "Update Status";
+      let message = `Are you sure you want to ${newStatus.toLowerCase()} "${recurringTransaction.Title}"?`;
+      let confirmText = "Update";
+
+      // Provide more specific messaging for different status changes
+      if (newStatus === "Cancelled") {
+        title = "Stop Recurring Transaction";
+        message = `Are you sure you want to permanently stop "${recurringTransaction.Title}"?\n\nThis action will:\n• Stop all future occurrences\n• Cannot be undone\n• The recurring transaction will be permanently removed`;
+        confirmText = "Stop Permanently";
+      } else if (newStatus === "Paused") {
+        title = "Pause Recurring Transaction";
+        message = `Are you sure you want to pause "${recurringTransaction.Title}"?\n\nThis will temporarily stop future occurrences until you resume it.`;
+        confirmText = "Pause";
+      } else if (newStatus === "Active") {
+        title = "Resume Recurring Transaction";
+        message = `Are you sure you want to resume "${recurringTransaction.Title}"?\n\nThis will restart the recurring transaction and create future occurrences.`;
+        confirmText = "Resume";
+      }
+
+      Alert.alert(title, message, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: confirmText,
+          style: newStatus === "Cancelled" ? "destructive" : "default",
+          onPress: async () => {
+            try {
+              const success = await updateRecurringTransactionStatus(
+                recurringTransaction.Id,
+                newStatus
+              );
+              if (success) {
+                await loadRecurringTransaction(); // Refresh data
+                const successMessage =
+                  newStatus === "Cancelled"
+                    ? "Recurring transaction stopped permanently"
+                    : `Status updated to ${newStatus}`;
+                Alert.alert("Success", successMessage);
               }
-            },
+            } catch (error) {
+              console.error("Error updating status:", error);
+            }
           },
-        ]
-      );
+        },
+      ]);
     } catch (error) {
       Alert.alert("Error", "Failed to update status");
     }
@@ -129,7 +149,7 @@ const ViewRecurringTransactionPage: React.FC = () => {
               size={40}
             />
           </View>
-          <Title text="Recurring Transaction Details" />
+          <Title text="Details" />
         </View>
       }
     >
@@ -318,7 +338,7 @@ const ViewRecurringTransactionPage: React.FC = () => {
 
           {recurringTransaction.Status !== "Cancelled" && (
             <Button
-              title="Cancel"
+              title="Stop"
               onPress={() => handleStatusChange("Cancelled")}
               variant="danger"
             />

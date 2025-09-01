@@ -21,8 +21,12 @@ import TotalBalance from "@/components/ui/TotalBalance";
 import TotalExpenses from "@/components/ui/TotalExpenses";
 import TotalReserves from "@/components/ui/TotalReserves";
 import Transaction from "@/components/ui/Transaction";
+import TransactionFilterModal, {
+  FilterOptions,
+} from "@/components/ui/TransactionFilterModal";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import useTransactions from "@/hooks/useTransactions";
+import useCategories from "@/hooks/useCategories";
 // Local interface for receipt processing
 interface TransactionData {
   Title: string;
@@ -90,7 +94,9 @@ const TransactionsPage = () => {
   const router = useRouter();
   const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
   const [isReceiptScannerVisible, setIsReceiptScannerVisible] = useState(false);
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
   const {
     transactions,
     balance,
@@ -104,6 +110,8 @@ const TransactionsPage = () => {
     fetchReserves,
   } = useTransactions();
 
+  const { categories } = useCategories();
+
   // Refresh transactions when the page comes into focus
   useFocusEffect(
     useCallback(() => {
@@ -113,17 +121,83 @@ const TransactionsPage = () => {
     }, [])
   );
 
+  // Filter transactions based on search and active filters
+  const filteredTransactions = useMemo(() => {
+    let filtered = transactions;
+
+    // Apply search filter
+    if (search) {
+      filtered = filtered.filter(
+        (tx: TransactionType) =>
+          tx.Title.toLowerCase().includes(search.toLowerCase()) ||
+          (tx.Category &&
+            tx.Category.toLowerCase().includes(search.toLowerCase()))
+      );
+    }
+
+    // Apply category filter
+    if (activeFilters.category) {
+      filtered = filtered.filter(
+        (tx: TransactionType) => tx.Category === activeFilters.category
+      );
+    }
+
+    // Apply type filter
+    if (activeFilters.type && activeFilters.type !== "All") {
+      filtered = filtered.filter(
+        (tx: TransactionType) => tx.Type === activeFilters.type
+      );
+    }
+
+    // Apply date range filter
+    if (activeFilters.startDate || activeFilters.endDate) {
+      filtered = filtered.filter((tx: TransactionType) => {
+        const transactionDate = new Date(tx.Date);
+        const startDate = activeFilters.startDate
+          ? new Date(activeFilters.startDate)
+          : null;
+        const endDate = activeFilters.endDate
+          ? new Date(activeFilters.endDate)
+          : null;
+
+        if (startDate && endDate) {
+          return transactionDate >= startDate && transactionDate <= endDate;
+        } else if (startDate) {
+          return transactionDate >= startDate;
+        } else if (endDate) {
+          return transactionDate <= endDate;
+        }
+        return true;
+      });
+    }
+
+    // Apply amount range filter
+    if (
+      activeFilters.minAmount !== undefined ||
+      activeFilters.maxAmount !== undefined
+    ) {
+      filtered = filtered.filter((tx: TransactionType) => {
+        const amount = tx.Amount;
+        const minAmount = activeFilters.minAmount;
+        const maxAmount = activeFilters.maxAmount;
+
+        if (minAmount !== undefined && maxAmount !== undefined) {
+          return amount >= minAmount && amount <= maxAmount;
+        } else if (minAmount !== undefined) {
+          return amount >= minAmount;
+        } else if (maxAmount !== undefined) {
+          return amount <= maxAmount;
+        }
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [transactions, search, activeFilters]);
+
   const filteredGroups = useMemo(() => {
-    const filtered = search
-      ? transactions.filter(
-          (tx: TransactionType) =>
-            tx.Title.toLowerCase().includes(search.toLowerCase()) ||
-            (tx.Category &&
-              tx.Category.toLowerCase().includes(search.toLowerCase()))
-        )
-      : transactions;
-    return groupTransactionsByDate(filtered);
-  }, [transactions, search]);
+    return groupTransactionsByDate(filteredTransactions);
+  }, [filteredTransactions]);
 
   const handleInputMethodSelect = (method: "manual" | "scan") => {
     console.log("Selected method:", method);
@@ -154,6 +228,16 @@ const TransactionsPage = () => {
     router.push("/login");
   };
 
+  const handleApplyFilters = (filters: FilterOptions) => {
+    setActiveFilters(filters);
+  };
+
+  const handleResetFilters = () => {
+    setActiveFilters({});
+  };
+
+  const hasActiveFilters = Object.keys(activeFilters).length > 0;
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{
@@ -162,7 +246,9 @@ const TransactionsPage = () => {
       }}
       headerImage={
         <View style={styles.topContainer}>
-          <Title text="Transactions" />
+          <View style={styles.titleContainer}>
+            <Title text="Transactions" />
+          </View>
           <View style={styles.buttonContainer}>
             <CircleButton
               icon="add"
@@ -211,13 +297,28 @@ const TransactionsPage = () => {
                 autoCorrect={false}
               />
             </View>
-            <TouchableOpacity style={styles.filterButton}>
-              <MaterialCommunityIcons
-                name="filter-variant"
-                size={16}
-                color={Colors.borderLight}
-              />
-            </TouchableOpacity>
+            <View style={styles.filterButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  hasActiveFilters && styles.filterButtonActive,
+                ]}
+                onPress={() => setIsFilterModalVisible(true)}
+              >
+                <MaterialCommunityIcons
+                  name="filter-variant"
+                  size={16}
+                  color={hasActiveFilters ? Colors.primary : Colors.borderLight}
+                />
+              </TouchableOpacity>
+              {hasActiveFilters && (
+                <View style={styles.filterIndicator}>
+                  <Text style={styles.filterIndicatorText}>
+                    {Object.keys(activeFilters).length}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
           {/* End Custom Search Bar Row */}
 
@@ -296,6 +397,14 @@ const TransactionsPage = () => {
         onClose={() => setIsReceiptScannerVisible(false)}
         onReceiptProcessed={handleReceiptProcessed}
       />
+      <TransactionFilterModal
+        visible={isFilterModalVisible}
+        onClose={() => setIsFilterModalVisible(false)}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
+        currentFilters={activeFilters}
+        categories={categories}
+      />
     </ParallaxScrollView>
   );
 };
@@ -309,6 +418,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
   },
   topContainer: {
+    padding: 20,
+  },
+  titleContainer: {
     padding: 20,
   },
   summaryContainer: {
@@ -411,7 +523,6 @@ const styles = StyleSheet.create({
   transactionList: {
     display: "flex",
     flexDirection: "column",
-    gap: 5,
     width: "100%",
   },
   searchRow: {
@@ -457,6 +568,29 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderLight,
     paddingVertical: 0,
     paddingHorizontal: 0,
+  },
+  filterButtonActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + "20",
+  },
+  filterButtonContainer: {
+    position: "relative",
+  },
+  filterIndicator: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterIndicatorText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontFamily: "JakarthaBold",
   },
   sectionHeader: {
     fontFamily: "JakarthaRegular",

@@ -37,20 +37,22 @@ export interface CreateBudgetData {
   Reminder: boolean;
   StartDate: string;
   RenewalFrequency: string;
+  AutoRenewalEnabled: boolean;
 }
 
 export interface UpdateBudgetData {
   Category: string;
   PlannedAmount: number;
-  SpentAmount: number;
   Reminder: boolean;
   StartDate: string;
   RenewalFrequency: string;
+  AutoRenewalEnabled: boolean;
 }
 
 const useBudgets = () => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
+  const [categoriesWithActiveBudgets, setCategoriesWithActiveBudgets] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -94,6 +96,17 @@ const useBudgets = () => {
       console.error('Error fetching budget summary:', err);
       // Don't set error for summary, just leave it null
       setSummary(null);
+    }
+  };
+
+  const fetchCategoriesWithActiveBudgets = async () => {
+    try {
+      const response = await api.get('/budgets/categories-with-active-budgets');
+      setCategoriesWithActiveBudgets(response.data);
+    } catch (err: any) {
+      console.error('Error fetching categories with active budgets:', err);
+      // Don't set error for this, just leave it empty
+      setCategoriesWithActiveBudgets([]);
     }
   };
 
@@ -185,16 +198,19 @@ const useBudgets = () => {
   useEffect(() => {
     fetchBudgets();
     fetchSummary();
+    fetchCategoriesWithActiveBudgets();
   }, []);
 
   return {
     budgets,
     summary,
+    categoriesWithActiveBudgets,
     loading,
     error,
     isAuthenticated,
     fetchBudgets,
     fetchSummary,
+    fetchCategoriesWithActiveBudgets,
     createBudget,
     updateBudget,
     deleteBudget,

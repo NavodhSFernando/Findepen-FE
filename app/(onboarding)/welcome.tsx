@@ -24,6 +24,9 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
           <View style={styles.progressContainer}>
             <Text style={styles.progressText}>1/6</Text>
           </View>
@@ -45,10 +48,6 @@ export default function WelcomeScreen() {
           <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>Logout</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -64,10 +63,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   header: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 60,
   },
   progressContainer: {
@@ -111,6 +112,8 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: "center",
     gap: 16,
+    marginTop: "auto",
+    paddingBottom: 80,
   },
   nextButton: {
     backgroundColor: Colors.primary,
@@ -126,17 +129,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   logoutButton: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    borderRadius: 12,
-    minWidth: 200,
-    borderWidth: 1,
-    borderColor: Colors.fadedText,
+    backgroundColor: "#dc3545",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   logoutButtonText: {
-    color: Colors.fadedText,
-    fontSize: 18,
+    color: Colors.white,
+    fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
   },

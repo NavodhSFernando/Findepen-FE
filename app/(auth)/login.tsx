@@ -153,14 +153,6 @@ const LoginPage: React.FC = () => {
             onPress={() => router.push("/register")}
           />
         </View>
-        <View style={styles.buttonWrapper}>
-          <Text
-            style={styles.onboardingText}
-            onPress={() => router.push("/welcome")}
-          >
-            👋 First time here? Start with our tour
-          </Text>
-        </View>
       </View>
     </ParallaxScrollView>
   );
@@ -214,13 +206,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
     fontFamily: "JakarthaRegular",
-  },
-  onboardingText: {
-    color: Colors.primary,
-    fontSize: 14,
-    marginTop: 10,
-    marginHorizontal: "auto",
-    fontFamily: "JakarthaBold",
   },
 });
 
