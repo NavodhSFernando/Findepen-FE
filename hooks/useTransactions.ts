@@ -93,7 +93,7 @@ const useTransactions = () => {
 
   const fetchBalance = async () => {
     try {
-      const response = await api.get('/user/balance');
+      const response = await api.get('/User/balance');
       setBalance(response.data.CurrentBalance);
       setExpenses(response.data.MonthlyExpenses);
     } catch (err: any) {

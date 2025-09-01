@@ -24,7 +24,8 @@ interface TransactionForm {
 const EditTransactionPage: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { updateTransaction, getTransactionById } = useTransactions();
+  const { updateTransaction, getTransactionById, balance, fetchBalance } =
+    useTransactions();
   const { categories, loading: categoriesLoading } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,11 @@ const EditTransactionPage: React.FC = () => {
   });
 
   const selectedType = watch("type");
+
+  // Fetch balance when component mounts
+  useEffect(() => {
+    fetchBalance();
+  }, [fetchBalance]);
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -86,10 +92,42 @@ const EditTransactionPage: React.FC = () => {
     try {
       setIsSubmitting(true);
 
+      const transactionAmount = parseFloat(data.amount);
+      const originalAmount = transaction?.Amount || 0;
+      const originalType = transaction?.Type || "Expense";
+
+      // Calculate the net impact on balance
+      let balanceImpact = 0;
+
+      // Remove the original transaction's impact
+      if (originalType === "Income") {
+        balanceImpact -= originalAmount;
+      } else {
+        balanceImpact += originalAmount;
+      }
+
+      // Add the new transaction's impact
+      if (data.type === "Income") {
+        balanceImpact += transactionAmount;
+      } else {
+        balanceImpact -= transactionAmount;
+      }
+
+      // Check if the new balance would go below 0
+      const newBalance = balance + balanceImpact;
+      if (newBalance < 0) {
+        Alert.alert(
+          "Insufficient Balance",
+          `This change would result in a negative balance of Rs. ${Math.abs(newBalance).toFixed(2)}. Please adjust the amount or transaction type.`,
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       const transactionData = {
         Title: data.title,
         Description: data.description || undefined,
-        Amount: parseFloat(data.amount),
+        Amount: transactionAmount,
         Category: data.category || undefined,
         Type: data.type,
         Date: data.date,
@@ -145,6 +183,12 @@ const EditTransactionPage: React.FC = () => {
       }
     >
       <View style={styles.bodyContainer}>
+        {/* Balance Display */}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Current Balance</Text>
+          <Text style={styles.infoValue}>Rs. {balance.toFixed(2)}</Text>
+        </View>
+
         <Controller
           control={control}
           name="type"
@@ -334,6 +378,53 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
+    color: Colors.text,
+  },
+  balanceContainer: {
+    backgroundColor: Colors.neutral,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignItems: "center",
+    shadowColor: Colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
+    color: Colors.borderLight,
+    marginBottom: 4,
+  },
+  balanceAmount: {
+    fontSize: 24,
+    fontFamily: "JakarthaBold",
+    color: Colors.text,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.neutral,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontFamily: "JakarthaRegular",
+    color: Colors.text,
+    opacity: 0.7,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontFamily: "JakarthaSemiBold",
     color: Colors.text,
   },
 });
