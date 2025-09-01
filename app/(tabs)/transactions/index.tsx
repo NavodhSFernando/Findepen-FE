@@ -1,0 +1,648 @@
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  RefreshControl,
+  ScrollView,
+} from "react-native";
+import React, { useState, useMemo, useCallback } from "react";
+import { useRouter, useFocusEffect } from "expo-router";
+import ParallaxScrollView from "@/components/ParallaxScrollView";
+import { Colors } from "@/constants/Colors";
+import CircleButton from "@/components/ui/CircleButton";
+import Title from "@/components/ui/Title";
+import { TransactionInputMethodSelector } from "@/components/ui/TransactionInputMethodSelector";
+import { ReceiptScanner } from "@/components/ui/ReceiptScanner";
+import TotalBalance from "@/components/ui/TotalBalance";
+import TotalExpenses from "@/components/ui/TotalExpenses";
+import TotalReserves from "@/components/ui/TotalReserves";
+import Transaction from "@/components/ui/Transaction";
+import TransactionFilterModal, {
+  FilterOptions,
+} from "@/components/ui/TransactionFilterModal";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import useTransactions from "@/hooks/useTransactions";
+import useCategories from "@/hooks/useCategories";
+// Local interface for receipt processing
+interface TransactionData {
+  Title: string;
+  Description?: string;
+  Amount: string;
+  Category?: string;
+  Type: "Expense" | "Income";
+  Date: string;
+}
+
+// Transaction type for type safety
+interface TransactionType {
+  Id: string;
+  Title: string;
+  Description?: string;
+  Amount: number;
+  Category?: string;
+  Type: "Income" | "Expense";
+  Date: string;
+}
+
+type GroupedTransactions = {
+  date: string;
+  transactions: TransactionType[];
+};
+
+const groupTransactionsByDate = (transactions: TransactionType[]) => {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const groups: {
+    today: TransactionType[];
+    yesterday: TransactionType[];
+    past: TransactionType[];
+  } = {
+    today: [],
+    yesterday: [],
+    past: [],
+  };
+
+  transactions.forEach((transaction) => {
+    const transactionDate = new Date(transaction.Date);
+    const isToday = transactionDate.toDateString() === today.toDateString();
+    const isYesterday =
+      transactionDate.toDateString() === yesterday.toDateString();
+
+    if (isToday) {
+      groups.today.push(transaction);
+    } else if (isYesterday) {
+      groups.yesterday.push(transaction);
+    } else {
+      groups.past.push(transaction);
+    }
+  });
+
+  return [
+    { date: "Today", transactions: groups.today },
+    { date: "Yesterday", transactions: groups.yesterday },
+    { date: "Past Transactions", transactions: groups.past },
+  ].filter((group) => group.transactions.length > 0);
+};
+
+const TransactionsPage = () => {
+  const router = useRouter();
+  const [isInputMethodVisible, setIsInputMethodVisible] = useState(false);
+  const [isReceiptScannerVisible, setIsReceiptScannerVisible] = useState(false);
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [search, setSearch] = useState("");
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
+  const {
+    transactions,
+    balance,
+    expenses,
+    reserves,
+    loading,
+    error,
+    isAuthenticated,
+    fetchTransactions,
+    fetchBalance,
+    fetchReserves,
+  } = useTransactions();
+
+  const { categories } = useCategories();
+
+  // Refresh transactions when the page comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions();
+      fetchBalance();
+      fetchReserves();
+    }, [])
+  );
+
+  // Filter transactions based on search and active filters
+  const filteredTransactions = useMemo(() => {
+    let filtered = transactions;
+
+    // Apply search filter
+    if (search) {
+      filtered = filtered.filter(
+        (tx: TransactionType) =>
+          tx.Title.toLowerCase().includes(search.toLowerCase()) ||
+          (tx.Category &&
+            tx.Category.toLowerCase().includes(search.toLowerCase()))
+      );
+    }
+
+    // Apply category filter
+    if (activeFilters.category) {
+      filtered = filtered.filter(
+        (tx: TransactionType) => tx.Category === activeFilters.category
+      );
+    }
+
+    // Apply type filter
+    if (activeFilters.type && activeFilters.type !== "All") {
+      filtered = filtered.filter(
+        (tx: TransactionType) => tx.Type === activeFilters.type
+      );
+    }
+
+    // Apply date range filter
+    if (activeFilters.startDate || activeFilters.endDate) {
+      filtered = filtered.filter((tx: TransactionType) => {
+        const transactionDate = new Date(tx.Date);
+        const startDate = activeFilters.startDate
+          ? new Date(activeFilters.startDate)
+          : null;
+        const endDate = activeFilters.endDate
+          ? new Date(activeFilters.endDate)
+          : null;
+
+        if (startDate && endDate) {
+          return transactionDate >= startDate && transactionDate <= endDate;
+        } else if (startDate) {
+          return transactionDate >= startDate;
+        } else if (endDate) {
+          return transactionDate <= endDate;
+        }
+        return true;
+      });
+    }
+
+    // Apply amount range filter
+    if (
+      activeFilters.minAmount !== undefined ||
+      activeFilters.maxAmount !== undefined
+    ) {
+      filtered = filtered.filter((tx: TransactionType) => {
+        const amount = tx.Amount;
+        const minAmount = activeFilters.minAmount;
+        const maxAmount = activeFilters.maxAmount;
+
+        if (minAmount !== undefined && maxAmount !== undefined) {
+          return amount >= minAmount && amount <= maxAmount;
+        } else if (minAmount !== undefined) {
+          return amount >= minAmount;
+        } else if (maxAmount !== undefined) {
+          return amount <= maxAmount;
+        }
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [transactions, search, activeFilters]);
+
+  const filteredGroups = useMemo(() => {
+    return groupTransactionsByDate(filteredTransactions);
+  }, [filteredTransactions]);
+
+  const handleInputMethodSelect = (method: "manual" | "scan") => {
+    console.log("Selected method:", method);
+    if (method === "manual") {
+      router.push("/transactions/add");
+    } else if (method === "scan") {
+      setIsReceiptScannerVisible(true);
+    }
+  };
+
+  const handleReceiptProcessed = (transactionData: TransactionData) => {
+    // Navigate to add transaction page with pre-filled data
+    router.push({
+      pathname: "/transactions/add",
+      params: {
+        prefill: JSON.stringify(transactionData),
+      },
+    });
+  };
+
+  const onRefresh = () => {
+    fetchTransactions();
+    fetchBalance();
+    fetchReserves();
+  };
+
+  const handleLogin = () => {
+    router.push("/login");
+  };
+
+  const handleApplyFilters = (filters: FilterOptions) => {
+    setActiveFilters(filters);
+  };
+
+  const handleResetFilters = () => {
+    setActiveFilters({});
+  };
+
+  const hasActiveFilters = Object.keys(activeFilters).length > 0;
+
+  return (
+    <ParallaxScrollView
+      headerBackgroundColor={{
+        light: Colors.secondary,
+        dark: Colors.secondary,
+      }}
+      headerImage={
+        <View style={styles.topContainer}>
+          <View style={styles.titleContainer}>
+            <Title text="Transactions" />
+          </View>
+          <View style={styles.buttonContainer}>
+            <CircleButton
+              icon="add"
+              onPress={() => setIsInputMethodVisible(true)}
+              size={40}
+            />
+          </View>
+          <View style={styles.summaryContainer}>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryCard}>
+                <TotalBalance totalBalance={balance} />
+              </View>
+              <View style={styles.summaryCard}>
+                <TotalReserves totalReserves={reserves} />
+              </View>
+            </View>
+          </View>
+        </View>
+      }
+    >
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.bodyContainer}>
+          {/* Custom Search Bar Row */}
+          <View style={styles.searchRow}>
+            <View style={styles.searchBarContainer}>
+              <MaterialCommunityIcons
+                name="clipboard-search-outline"
+                size={16}
+                color={Colors.fadedText}
+                style={{ marginLeft: 10 }}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search Transaction"
+                placeholderTextColor={Colors.fadedText}
+                value={search}
+                onChangeText={setSearch}
+                underlineColorAndroid="transparent"
+                selectionColor={Colors.primary}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            <View style={styles.filterButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  hasActiveFilters && styles.filterButtonActive,
+                ]}
+                onPress={() => setIsFilterModalVisible(true)}
+              >
+                <MaterialCommunityIcons
+                  name="filter-variant"
+                  size={16}
+                  color={hasActiveFilters ? Colors.primary : Colors.borderLight}
+                />
+              </TouchableOpacity>
+              {hasActiveFilters && (
+                <View style={styles.filterIndicator}>
+                  <Text style={styles.filterIndicatorText}>
+                    {Object.keys(activeFilters).length}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          {/* End Custom Search Bar Row */}
+
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              {!isAuthenticated && (
+                <TouchableOpacity
+                  style={styles.loginButton}
+                  onPress={handleLogin}
+                >
+                  <Text style={styles.loginButtonText}>Log In</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {!loading && filteredGroups.length === 0 && !error && (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No transactions found</Text>
+              <Text style={styles.emptySubtext}>
+                Add your first transaction to get started
+              </Text>
+            </View>
+          )}
+
+          {filteredGroups.length > 0 && (
+            <View style={{ width: "100%" }}>
+              {filteredGroups.map((item) => (
+                <View
+                  key={item.date}
+                  style={{ marginBottom: 24, width: "100%" }}
+                >
+                  <Text style={styles.sectionHeader}>{item.date}</Text>
+                  <View style={styles.transactionList}>
+                    {item.transactions.map((tx) => (
+                      <Transaction
+                        key={tx.Id}
+                        id={
+                          typeof tx.Id === "number"
+                            ? tx.Id
+                            : parseInt(
+                                String(tx.Id)
+                                  .replace(/[^0-9]/g, "")
+                                  .slice(0, 8)
+                              ) || 0
+                        }
+                        title={tx.Title || ""}
+                        type={
+                          tx.Type && tx.Type.toLowerCase() === "income"
+                            ? "income"
+                            : "expense"
+                        }
+                        category={tx.Category || ""}
+                        amount={tx.Amount || 0}
+                        date={tx.Date || ""}
+                        onPress={() =>
+                          router.push(`/transactions/view?id=${tx.Id}`)
+                        }
+                      />
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+      <TransactionInputMethodSelector
+        visible={isInputMethodVisible}
+        onClose={() => setIsInputMethodVisible(false)}
+        onSelect={handleInputMethodSelect}
+      />
+      <ReceiptScanner
+        visible={isReceiptScannerVisible}
+        onClose={() => setIsReceiptScannerVisible(false)}
+        onReceiptProcessed={handleReceiptProcessed}
+      />
+      <TransactionFilterModal
+        visible={isFilterModalVisible}
+        onClose={() => setIsFilterModalVisible(false)}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
+        currentFilters={activeFilters}
+        categories={categories}
+      />
+    </ParallaxScrollView>
+  );
+};
+
+export default TransactionsPage;
+
+const styles = StyleSheet.create({
+  backgroundContainer: {
+    display: "flex",
+    alignItems: "center",
+    backgroundColor: Colors.secondary,
+  },
+  topContainer: {
+    padding: 20,
+  },
+  titleContainer: {
+    padding: 20,
+  },
+  summaryContainer: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "center",
+    alignSelf: "stretch",
+    marginTop: 52,
+    gap: 20,
+  },
+  summaryRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    alignSelf: "stretch",
+    width: "100%",
+    gap: 20,
+    paddingBottom: 10,
+  },
+  summaryCard: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: Colors.background,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  headerContainer: {
+    display: "flex",
+    flexDirection: "row",
+    paddingBottom: 52,
+    paddingTop: 30,
+    width: "100%",
+  },
+  headerTextContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 0,
+  },
+  headerText: {
+    fontFamily: "JakarthaBold",
+    fontSize: 16,
+    color: Colors.text,
+  },
+  greetingText: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 16,
+    color: Colors.text,
+  },
+  buttonContainer: {
+    position: "absolute",
+    top: 65,
+    right: 40,
+  },
+  bodyContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 24,
+    width: "100%",
+    minHeight: "100%",
+    flexShrink: 0,
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 20,
+  },
+  recentTransactions: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    gap: 20,
+  },
+  transactionHeader: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+  },
+  transactionLink: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 10,
+    color: Colors.text,
+  },
+  transactionList: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 18,
+    paddingHorizontal: 10,
+  },
+  searchBarContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.neutral,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    borderRadius: 16,
+    height: 36,
+    paddingVertical: 0,
+    paddingHorizontal: 4,
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    color: Colors.text,
+    fontFamily: "JakarthaRegular",
+    fontSize: 13,
+    marginLeft: 6,
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    height: 36,
+  },
+  filterButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.neutral,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  filterButtonActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + "20",
+  },
+  filterButtonContainer: {
+    position: "relative",
+  },
+  filterIndicator: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterIndicatorText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontFamily: "JakarthaBold",
+  },
+  sectionHeader: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 12,
+    color: Colors.borderLight,
+    textTransform: "uppercase",
+    paddingBottom: 10,
+  },
+  errorContainer: {
+    padding: 20,
+    backgroundColor: Colors.errorLight,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: "center",
+  },
+  errorText: {
+    color: Colors.error,
+    fontFamily: "JakarthaRegular",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  loginButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    color: Colors.white,
+    fontFamily: "JakarthaBold",
+    fontSize: 16,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  emptyText: {
+    fontFamily: "JakarthaBold",
+    fontSize: 18,
+    color: Colors.text,
+    textAlign: "center",
+  },
+  emptySubtext: {
+    fontFamily: "JakarthaRegular",
+    fontSize: 14,
+    color: Colors.fadedText,
+    textAlign: "center",
+    marginTop: 5,
+  },
+  scrollView: {
+    flex: 1,
+  },
+});

@@ -7,25 +7,39 @@ const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
 export const Colors = {
+  primary: '#133E87',
+  secondary: '#5c94f7',
+  background: '#f7f7f7',
+  text: '#000000',
+  neutral: '#ffffff',
+  borderLight: '#AAAAAA',
+  fadedPrimary: "#4c648c",
+  fadedText: '#7a7979',
+  error: '#EF4444', // Updated to match image red color
+  success: '#4CD964',
+  white: '#ffffff',
+  errorLight: '#F6EDC2',
+  // Additional colors for recurring transactions
+  income: '#4CD964', // Map to success
+  expense: '#EF4444', // Updated to match image red color
+  warning: '#FF9500', // Orange color for warnings
+  card: '#ffffff', // Map to neutral
+  shadow: '#000', // Shadow color
+  border: '#C5C5C5', // Map to borderLight
   light: {
     text: '#11181C',
     background: '#fff',
-    tint: tintColorLight,
+    tint: '#0a7ea4',
     icon: '#687076',
     tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    tabIconSelected: '#0a7ea4',
   },
   dark: {
     text: '#ECEDEE',
     background: '#151718',
-    tint: tintColorDark,
+    tint: '#fff',
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    tabIconSelected: '#fff',
   },
-  primary: '133E87',
-  secondary: 'ACD8FF',
-  background: 'EEEEDD',
-  text: '000000',
-  neutral: 'ffffff'
 };
